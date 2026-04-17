@@ -1,6 +1,0 @@
-./.env/
-dbs/uploads/
-flash_session/**
-site/__pycache__/
-instance/data.db
-python/__pycache__/

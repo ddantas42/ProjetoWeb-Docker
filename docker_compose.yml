@@ -1,0 +1,6 @@
+
+services:
+  python_server:
+    build: /Python_Server
+    ports:
+      - "80:12345"
