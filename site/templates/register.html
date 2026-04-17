@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="{{ lang.language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Share</title>
+    <link rel="stylesheet" href="../static/css/Global1.css">
+    <link rel="stylesheet" href="../static/css/Global2.css">
+</head>
+<body>
+    <header>
+        <h1>{{ lang.register.register_title }}</h1>
+    </header>
+
+    <section>
+        <h2>{{ lang.register.create_account }}</h2>
+        <form action="/register" method="POST" onsubmit="Doublepass">
+            <label for="username">{{ lang.register.username }}:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="email">{{ lang.register.email }}:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">{{ lang.register.password }}:</label>
+            <input type="password" id="password" name="password" required>
+
+            <label for="confirm_password">{{ lang.register.confirm_password }}:</label>
+            <input title="Letras de A-Z, a-z e underscore" type="password" id="confirm_password" name="confirm_password" required pattern="^[\w]{3,7}$">
+
+            <button type="submit">{{ lang.register.register }}</button>
+
+			<select id="language" name="language" required>
+				<option value="en">English</option>
+				<option value="pt">Português</option>
+				<option value="es">Español</option>
+				<option value="fr">Français</option>
+			</select>
+			
+        </form>
+		<p>{{ lang.register.already_have_account }}
+			<button onclick="window.location='/login'">{{ lang.register.login }}</button>
+		</p>
+
+		{% if lang.error_message %}
+			<p class="error">{{ lang.error_message }}</p>
+		{% endif %}
+    </section>
+
+	<script>
+		function Doublepass()
+		{
+			var pass = document.getElementById("password").value;
+			var confirm_pass = document.getElementById("confirm_password").value;
+
+			if (pass != confirm_pass)
+			{
+				alert("Passwords do not match");
+				return false;
+			}	
+			return true;
+		}
+	</script>
+
+</body>
+</html>

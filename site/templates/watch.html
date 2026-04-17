@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="{{ lang.language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Share</title>
+    <link rel="stylesheet" href="../static/css/Global1.css">
+    <link rel="stylesheet" href="../static/css/Watch.css">
+</head>
+<body>
+
+	<div class="container">
+		<h1>{{ lang.video.title }}</h1>
+	
+		{% if lang.video.extension == "mp4" %}
+		<!-- Video Player -->
+		<video controls>
+			<source src="api/getVideo/{{ lang.video.id }}" type="video/mp4">
+			{{ lang.watch.browser_not_support_video }}
+		</video>
+
+		{% endif %}
+
+		{% if lang.video.extension == "mp3" %}
+
+		<!-- Audio Player -->
+		<audio controls>
+			<source src="api/getVideo/{{ lang.video.id }}" type="audio/mp3">
+			{{ lang.watch.browser_not_support_audio }}
+		</audio>
+
+		{% else %}
+		
+		<!-- Image -->
+		<img src="api/getVideo/{{ lang.video.id }}" alt="Image" >
+		
+
+		{% endif %}
+	
+		<!-- Description -->
+		<div class="description">
+			<p><strong>{{ lang.watch.title }}:</strong> {{ lang.video.title }}</p>
+			<p><strong>{{ lang.watch.description }}:</strong> {{ lang.video.description }}</p>
+			<p><strong>{{ lang.watch.location }}:</strong> {{ lang.watch.longitude}}: {{ lang.video.latitude }}, {{ lang.watch.longitude}}: {{ lang.video.longitude }}</p>
+		</div>
+	
+    <div class="footer">
+        <p>&copy;{{ lang.video.filename }}</p>
+    </div>
+</div>
+
+</body>
+</html>

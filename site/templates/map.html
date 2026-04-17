@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="{{ lang.language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Share</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	<link rel="stylesheet" href="../static/css/Map.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <h1>Map Share</h1>
+
+	<nav>
+        <ul>
+            <li><a href="/">{{ lang.map.return_home }}</a></li>
+        </ul>
+    </nav>
+
+    <br>
+
+    <div class="center">
+	    <button id="update" onclick="UpdateMap()">{{ lang.map.update_map }}</button>
+	    <input type="text" id="searchInput" placeholder="{{ lang.map.search_placeholder }}">
+	    <button id="search" onclick="SearchMap()">{{ lang.map.search_map }}</button>
+    </div>
+
+    <div id="map"></div>
+	
+    <script text="text/javascript" src="../static/js/Map.js"></script>
+	
+</body>
+</html>

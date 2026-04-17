@@ -1,0 +1,79 @@
+a { /*"Return to Home Page"*/
+    color: rgba(255, 255, 255, 0.700);
+    font-weight: bold;
+    font-style: italic;
+    font-size: large;
+    padding: 5px 10px;
+    border: 2px solid rgba(255, 255, 255, 0.700);
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+a:hover { /*Animação para o Botão*/
+    background-color: rgba(255, 255, 255, 0.8);
+    color: green;
+}
+
+section { /*Caixa Translúcida*/
+    text-align: center;
+    background: rgba(255, 255, 255, 0.575);
+    padding: 15px 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.589);
+    width: 100%;
+    max-width: 500px;
+    margin-top: 20px;
+}
+
+form input, form textarea { /*Caixas Escrever*/
+    padding: 10px;
+    font-size: medium;
+    border: 1px solid rgba(0, 0, 0, 0.479);
+    border-radius: 5px;
+    transition: border-color 0.7s ease, transform 0.3s ease;
+}
+
+form .coordinates-group { /*"Latitude" e "Longitude"*/
+    text-align: center;
+}
+
+form .coordinates-group input { /*Caixas "Latitude" e "Longitude"*/
+    margin-right: 10px;
+    padding: 10px;
+    width: 125px;
+    height: 10px;
+    margin-bottom: 10px;
+    font-size: medium;
+    border: 1px solid rgba(0, 0, 0, 0.479);
+    border-radius: 5px;
+    transition: border-color 0.7s ease, transform 0.3s ease;
+}
+
+form textarea { /*Especificamente a caixa "Description"*/
+    font-size: large;
+    font-family: Arial, sans-serif;
+}
+
+form input:focus, form textarea:focus { /*Clicar nas Caixas Escrever*/
+    border-color: rgb(255, 0, 0);
+    outline: none;
+    transform: scale(1.02);
+}
+
+form .coordinates-group input:focus { /*Clicar nas Caixas "Latitude" e "Longitude"*/
+    border-color: rgb(255, 0, 0);
+    outline: none;
+    transform: scale(1.02);
+}
+
+button { /*"Upload"*/
+    padding: 10px 20px;
+    font-size: medium;
+    color: rgb(255, 0, 0);
+    background-color: rgba(255, 255, 255, 0);
+    border: 1px solid rgba(0, 0, 0, 0.479);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.7s ease, color 1s ease;
+}

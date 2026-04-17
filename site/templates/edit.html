@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="{{ lang.language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Share</title>
+    <link rel="stylesheet" href="../static/css/Global1.css">
+    <link rel="stylesheet" href="../static/css/Upload.css">
+</head>
+<body>
+    <header>
+        <h1>{{ lang.edit.edit_title }}</h1>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="/">{{ lang.edit.return_home }}</a></li>
+        </ul>
+    </nav>
+
+    <section>
+        <h2>{{ lang.edit.edit_title }}</h2>
+        <form action="{{ url_for('doEditVideo', video_id=lang.video.id) }}" method="POST" enctype="multipart/form-data">
+            
+            <label for="title">{{ lang.edit.title }}:</label>
+            <input type="text" id="title" name="title"  placeholder=" {{ lang.video.title }}" >
+            
+            <label for="description">{{ lang.edit.description }}:</label>
+            <textarea id="description" name="description" rows="4"  placeholder=" {{ lang.video.description }}"></textarea>
+
+            <button type="submit">{{ lang.edit.update_video }}</button>
+
+			{% if lang.error_message %}
+			<p class="error">{{ lang.error_message }}</p>
+			{% endif %}
+			
+			{% if lang.info_message %}
+			<p class="info">{{ lang.info_message }}</p>
+			{% endif %}
+			
+        </form>
+    </section>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="{{ lang.language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Share</title>
+	<link rel="stylesheet" href="../static/css/Global1.css">
+	<link rel="stylesheet" href="../static/css/Home.css">
+</head>
+<header>
+    <h1>Map Share</h1>
+</header>
+<body>
+    <nav>
+        <ul class="flex-container">
+            <li class="box"><a href="/upload">{{ lang.home.upload_video }}</a></li>
+            <li class="box"><a href="/map">{{ lang.home.map }}</a></li>
+            <li class="box"><a href="/logout">{{ lang.home.logout }}</a></li>
+        </ul>
+    </nav>
+	
+	<h1>
+		{{ lang.home.my_videos}}
+	</h1>
+
+    <ul class="video-list">
+	{% for video in videos %}
+		<li class="box"><a href="/edit/{{ video.id }}">{{ video.title }} </a></li>
+	{% endfor %}
+	</ul>
+
+</body>
+</html>

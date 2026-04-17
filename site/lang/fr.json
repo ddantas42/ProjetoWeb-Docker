@@ -1,0 +1,90 @@
+{
+	"language": "fr",
+	"error": {
+		"invalid_link": "Lien invalide",
+		"video_not_found": "Vidéo introuvable"
+	},
+	
+	"home": {
+		"upload_video": "Téléverser une vidéo",
+		"logout": "Se déconnecter",
+		"map": "Carte",
+		"my_videos": "Mes vidéos",
+		"video_not_supported": "Votre navigateur ne supporte pas la balise vidéo."
+	},
+
+	"login": {
+		"login_title": "Se connecter à Map Share",
+		"email": "Adresse e-mail",
+		"password": "Mot de passe",
+		"login": "Se connecter",
+		"register": "S'inscrire",
+		"no_account": "Vous n'avez pas de compte ?"
+	},
+
+	"register": {
+		"create_account": "Créer un compte",
+		"register_title": "S'inscrire à Map Share",
+		"email": "Adresse e-mail",
+		"username": "Nom d'utilisateur",
+		"password": "Mot de passe",
+		"confirm_password": "Confirmer le mot de passe",
+		"register": "S'inscrire",
+		"already_have_account": "Vous avez déjà un compte ?",
+		"login": "Se connecter"
+	},
+
+	"map": {
+		"return_home": "Retour à l'accueil",
+		"update_map": "Mettre à jour la carte",
+		"search_placeholder": "Rechercher un emplacement",
+		"search_map": "Rechercher sur la carte"
+	},
+
+	"upload": {
+		"upload_title": "Téléverser du contenu sur Map Share",
+		"return_home": "Retour à la page d'accueil",
+		"upload_content": "Téléverser un contenu",
+		"select_file": "Sélectionner un fichier",
+		"upload": "Téléverser",
+		"title": "Titre",
+		"description": "Description",
+		"latitude": "Latitude",
+		"longitude": "Longitude",
+		"put_my_coords": "Utiliser mes coordonnées"
+	},
+
+	"edit": {
+		"edit_title": "Modifier la vidéo",
+		"return_home": "Retour à la page d'accueil",
+		"update_video": "Mettre à jour la vidéo",
+		"title": "Titre",
+		"description": "Description"
+	},
+
+	"watch": {
+		"title": "Titre",
+		"description": "Description",
+		"location": "Localisation",
+		"latitude": "Latitude",
+		"longitude": "Longitude",
+		"browser_not_support_video": "Votre navigateur ne supporte pas la balise vidéo.",
+		"browser_not_support_audio": "Votre navigateur ne supporte pas la balise audio."
+	},
+
+	"special": {
+		"invalid_password": "Mot de passe invalide",
+		"invalid_email": "Adresse e-mail invalide",
+		"not_activated": "Compte non activé",
+		"no_file": "Aucun fichier sélectionné",
+		"invalid_file": "Fichier invalide",
+		"fill_all": "Remplissez tous les champs",
+		"file_already_exists": "Le fichier existe déjà",
+		"upload_successfull": "Téléversement réussi",
+		"video_not_found": "Vidéo introuvable",
+		"account_created_successfully": "Compte créé avec succès",
+		"activation_email_sent": "E-mail d'activation envoyé",
+		"email_already_registered": "Adresse e-mail déjà enregistrée",
+		"edit_successfull": "Modification réussie"
+	}
+}

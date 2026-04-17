@@ -1,0 +1,98 @@
+{
+	"language": "es",
+	"error":
+	{
+		"invalid_link": "link inválido",
+		"video_not_found": "Vídeo no encontrado"
+	},
+	
+	"home":
+	{
+		"upload_video": "Subir vídeo",
+		"logout": "Cerrar sesión",
+		"map": "Mapa",
+		"my_videos": "Mis vídeos",
+		"video_not_supported": "Tu navegador no soporta la etiqueta de vídeo."
+	},
+
+	"login":
+	{
+		"login_title": "Iniciar sesión en Map Share",
+		"email": "Correo electrónico",
+		"password": "Contraseña",
+		"login": "Iniciar sesión",
+		"register": "Registrarse",
+		"no_account": "¿No tienes cuenta?"
+	},
+
+	"register":
+	{
+		"create_account": "Crear cuenta",
+		"register_title": "Registrarse en Map Share",
+		"email": "Correo electrónico",
+		"username": "Nombre de usuario",
+		"password": "Contraseña",
+		"confirm_password": "Confirmar contraseña",
+		"register": "Registrarse",
+		"already_have_account": "¿Ya tienes cuenta?",
+		"login": "Iniciar sesión"
+	},
+
+	"map": 
+	{
+		"return_home": "Volver a inicio",
+		"update_map": "Actualizar mapa",
+		"search_placeholder": "Buscar una ubicación",
+		"search_map": "Buscar en el mapa"
+	},
+
+	"upload":
+	{
+		"upload_title": "Subir contenido a Map Share",
+		"return_home": "Volver a la página de inicio",
+		"upload_content": "Subir contenido",
+		"select_file": "Seleccionar archivo",
+		"upload": "Subir",
+		"title": "Título",
+		"description": "Descripción",
+		"latitude": "Latitud",
+		"longitude": "Longitud",
+		"put_my_coords": "Poner mis coordenadas"
+	},
+
+	"edit":
+	{
+		"edit_title": "Editar vídeo",
+		"return_home": "Volver a la página de inicio",
+		"update_video": "Actualizar vídeo",
+		"title": "Título",
+		"description": "Descripción"
+	},
+
+	"watch":
+	{
+		"title": "Título",
+		"description": "Descripción",
+		"location": "Ubicación",
+		"latitude": "Latitud",
+		"longitude": "Longitud",
+		"browser_not_support_video": "Tu no soporta la etiqueta de video.",
+		"browser_not_support_audio": "Tu no soporta la etiqueta de audio."
+	},
+
+	"special": {
+		"invalid_password": "Contraseña inválida",
+		"invalid_email": "Correo inválido",
+		"not_activated": "Cuenta no activada",
+		"no_file": "Ningún archivo seleccionado",
+		"invalid_file": "Archivo inválido",
+		"fill_all": "Rellena todos los campos",
+		"file_already_exists": "El archivo ya existe",
+		"upload_successfull": "Subida exitosa",
+		"video_not_found": "Vídeo no encontrado",
+		"activation_email_sent": "Correo de activación enviado",
+		"email_already_registered": "Correo ya registrado",
+		"edit_successfull": "Edición exitosa"
+	}
+
+}
