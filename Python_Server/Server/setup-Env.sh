@@ -1,4 +1,5 @@
  #!/bin/bash
+set -e
 
 PYTHON_BIN=python3
 

@@ -1,11 +1,11 @@
 FROM ubuntu:latest
 
-RUN apt-get update && apt-get install -y python3 python3-pip
+RUN apt-get update && apt-get install -y python3 python3-pip python3-venv
 
-WORKDIR /app
+WORKDIR /Server
 
-COPY ./Server/ /app/
+COPY ./Server/ /Server/
 
-RUN ./setup.sh
+RUN bash /Server/setup-Env.sh
 
-CMD ["bash", "go-server.sh"]
+CMD ["bash", "/Server/go-Server.sh"]
