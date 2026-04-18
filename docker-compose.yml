@@ -1,6 +1,29 @@
-
 services:
   python_server:
     build: Python_Server/
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: "${DB_PORT:-3306}"
+      DB_NAME: ${DB_NAME:-projectweb}
+      DB_USER: ${DB_USER:-projectweb}
+      DB_PASSWORD: ${DB_PASSWORD:-projectweb}
     ports:
-      - "12345:80"
+      - "80:80"
+
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-projectweb}
+      MARIADB_USER: ${MARIADB_USER:-projectweb}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-projectweb}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-rootpass}
+    volumes:
+      - ${DB_VOLUME_PATH:-/home/hiper/Projects/Enidh/ProjetoWeb/DB}:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p$$MARIADB_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10

@@ -44,7 +44,17 @@ app.config[ 'MAIL_PASSWORD' ] = 'fecgftvpouortiqg'
 app.config[ 'MAIL_USE_TLS' ] = False
 app.config[ 'MAIL_USE_SSL' ] = True
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
+db_user = os.getenv('DB_USER', 'projectweb')
+db_password = os.getenv('DB_PASSWORD', 'projectweb')
+db_host = os.getenv('DB_HOST', 'db')
+db_port = os.getenv('DB_PORT', '3306')
+db_name = os.getenv('DB_NAME', 'projectweb')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+	'DATABASE_URL',
+	f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
+)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 Session(app)
 mail = Mail(app)
@@ -98,7 +108,7 @@ def dologin():
 	# Check if password is correct
 	hashed_password = hashlib.md5(password.encode()).hexdigest()
 	if user.password != hashed_password:
-		lang['error_message'] = loadSpecialLang(user.lang, "invalid_passord")
+		lang['error_message'] = loadSpecialLang(user.lang, "invalid_password")
 		return render_template('login.html', lang=lang)
 
 	# Check if account is activated

@@ -36,7 +36,9 @@ async function UpdateMap(search = '')
 
 	try
 	{
-		const response = await fetch('http://localhost:80/api/videos')
+		const response = await fetch('/api/videos', {
+			credentials: 'same-origin'
+		})
 		if (!response.ok)
 			throw new Error('Network response was not ok')
 

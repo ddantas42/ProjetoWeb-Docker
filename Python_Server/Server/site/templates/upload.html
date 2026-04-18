@@ -82,8 +82,10 @@
 			const fileExtension = file.name.split('.').pop().toLowerCase();
 
 			if (!allowedExtensions.includes(fileExtension))
+			{
 				alert("Invalid file!")
 				e.preventDefault();
+			}
 
 		});
 
