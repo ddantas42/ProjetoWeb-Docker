@@ -3,14 +3,15 @@ from flask import Flask, redirect, send_file, request, render_template, session,
 from flask_session import Session
 from flask_mail import Mail, Message
 
-from python.db import sql, Users, Video, Activation, saveUser, saveVideo, saveActivation, get_user_lang, get_user_username, print_all_data
 from python.utils import allowed_file, get_file_extension, UPLOAD_FOLDER
 from python.lang import loadLang, loadSpecialLang
+from python.data_server_api import DataServerAPI
 
 import hashlib
 import logging
 import re
 import os
+import requests
 
 # Regular expressions
 emailRegEx = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
@@ -29,6 +30,7 @@ r"""
 """
 
 
+db_api = DataServerAPI()
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 
@@ -36,6 +38,9 @@ app.config[ 'TEMPLATES_AUTO_RELOAD' ] = True
 
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
+# chave super hiper mega ULTRA secreta
+app.secret_key = os.getenv('SECRET_KEY', 'chave_secreta_desenvolvimento')
+
 
 app.config[ 'MAIL_SERVER' ]= 'smtp.gmail.com'
 app.config[ 'MAIL_PORT' ] = 465
@@ -44,22 +49,32 @@ app.config[ 'MAIL_PASSWORD' ] = 'fecgftvpouortiqg'
 app.config[ 'MAIL_USE_TLS' ] = False
 app.config[ 'MAIL_USE_SSL' ] = True
 
-db_user = os.getenv('DB_USER', 'projectweb')
-db_password = os.getenv('DB_PASSWORD', 'projectweb')
-db_host = os.getenv('DB_HOST', 'db')
-db_port = os.getenv('DB_PORT', '3306')
-db_name = os.getenv('DB_NAME', 'projectweb')
+# NOTA DE ARQUITETURA:
+# As variáveis de ligação à base de dados (DB_USER, DB_PASSWORD, etc) foram removidas daqui.
+# O Server.py (Frontend) não se liga diretamente à base de dados.
+# Toda a comunicação com a BD é feita através da API (python.data_server_api),
+# e a verdadeira ligação à BD está no ficheiro Data_Server/app.py.
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-	'DATABASE_URL',
-	f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
-)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-Session(app)
 mail = Mail(app)
 
 logging.basicConfig( level=logging.DEBUG )
+
+# ===== HELPER FUNCTIONS =====
+def get_user_lang(email):
+	"""Obtém a língua do utilizador"""
+	response = db_api.get_user(email)
+	if response.status_code == 200:
+		user = response.json()
+		return user.get('lang', 'en')
+	return 'en'
+
+def get_user_username(email):
+	"""Obtém o username do utilizador"""
+	response = db_api.get_user(email)
+	if response.status_code == 200:
+		user = response.json()
+		return user.get('username', '')
+	return ''
 
 @app.route('/')
 def getRoot():
@@ -74,7 +89,13 @@ def home():
 
 	# Fetch user language preferences and videos uploaded by the user
 	lang = loadLang(get_user_lang(session.get('email')))
-	user_videos = Video.query.filter_by(uploader=get_user_username(session.get('email'))).all()
+	username = get_user_username(session.get('email'))
+
+	response = db_api.get_videos_by_uploader(username)
+
+	user_videos = []
+	if response.status_code == 200:
+		user_videos = response.json()
 	
 	return render_template('home.html', lang=lang, videos=user_videos)
 
@@ -93,32 +114,34 @@ def dologin():
 	email = request.form['email']
 	password = request.form['password']	
 
-	user = Users.query.filter_by(email=email).first()
+	response = db_api.get_user(email)
 
 	lang = loadLang("en")
 
 	# Check if email exists in database
-	if not user:
+	if response.status_code != 200:
 		lang['error_message'] = loadSpecialLang("en", "invalid_email")
 		return render_template('login.html', lang=lang)
 
+	user = response.json()
+
 	# Load user language preferences
-	lang = loadLang(user.lang)
+	lang = loadLang(user['lang'])
 
 	# Check if password is correct
 	hashed_password = hashlib.md5(password.encode()).hexdigest()
-	if user.password != hashed_password:
-		lang['error_message'] = loadSpecialLang(user.lang, "invalid_password")
+	if user['password'] != hashed_password:
+		lang['error_message'] = loadSpecialLang(user['lang'], "invalid_password")
 		return render_template('login.html', lang=lang)
 
 	# Check if account is activated
-	if not user.activated:
-		lang['error_message']= loadSpecialLang(user.lang, "not_activated")
+	if not user['activated']:
+		lang['error_message']= loadSpecialLang(user['lang'], "not_activated")
 		return render_template('login.html', lang=lang)
 
-	session['email'] = user.email
+	session['email'] = user['email']
 
-	return render_template('home.html', lang=lang)
+	return redirect('/home')
 
 @app.route('/logout', methods=['GET'])
 def logout():
@@ -173,25 +196,36 @@ def register():
 		lang['error_message'] = "Invalid language."
 		return render_template('register.html', lang=lang)
 
-	existing_user = Users.query.filter_by(email=email).first()
+	existing_response = db_api.get_user(email)
 	
 	# Check if user is already registered
-	if existing_user:
-		lang = loadLang(existing_user.lang)
-		lang['error_message'] = loadSpecialLang(existing_user.lang, "email_already_registered")
+	if existing_response.status_code == 200:
+		existing_user = existing_response.json()
+		lang = loadLang(existing_user['lang'])
+		lang['error_message'] = loadSpecialLang(existing_user['lang'], "email_already_registered")
 		return render_template('register.html', lang=lang)
 
 	hashed_password = hashlib.md5(password.encode()).hexdigest()
 
 	# Save user data to database
-	saveUser(email, username, hashed_password, user_lang, False)
+	db_api.create_user({
+		"email": email,
+		"username": username,
+		"password": hashed_password,
+		"lang": user_lang,
+		"activated": False
+	})
 
 	# Generate activation link
 	hashed_mail = hashlib.md5(email.encode()).hexdigest()
 	activation_link = f"{request.host_url}activate?hashed={hashed_mail}"
 
 	# Save activation link to database
-	saveActivation(hashed_mail, email)
+	db_api.create_activation({
+		"hash": hashed_mail,
+		"email": email
+	})
+
 	send_activation_email(email, activation_link)
 	
 	lang['info_message'] = loadSpecialLang(user_lang, "activation_email_sent")
@@ -206,27 +240,30 @@ def activate_account():
 	if not hashed_mail:
 		return render_template('error.html', error_message="Invalid activation link", redirectURL="/")
 
-	activate_entry = Activation.query.filter_by(hash=hashed_mail).first()
+	activate_response = db_api.get_activation(hashed_mail)
 
 	# Check if hashed_mail is in activation database
-	if not activate_entry:
+	if activate_response.status_code != 200:
 		return render_template('error.html', error_message="Invalid activation link", redirectURL="/")
 
-	email = activate_entry.email
+	activate_entry = activate_response.json()
+	email = activate_entry['email']
 
-	user = Users.query.filter_by(email=email).first()
-	if not user:
+	user_response = db_api.get_user(email)
+	if user_response.status_code != 200:
 		return render_template('error.html', error_message="Invalid activation link", redirectURL="/")
 
-	user.activated = True
-	sql.session.delete(activate_entry)
-	sql.session.commit()
+	db_api.update_user(email, {
+		"activated": True
+	})
 
-	session['email'] = user.email
+	db_api.delete_activation(hashed_mail)
+
+	session['email'] = email
 
 	logging.debug(f"email {email} verified successfully")
 	lang = loadLang(get_user_lang(email))
-	return render_template('home.html', redirectURL="/", lang=lang)
+	return redirect('/home')
 
 @app.route('/map', methods=['GET'])
 def getMap():
@@ -258,31 +295,35 @@ def upload():
 
 	md5 = hashlib.md5(file.filename.encode()).hexdigest()
 
-	video = Video.query.filter_by(hash=md5).first()
+	response = db_api.get_video_by_hash(md5)
 	
 	# Check if exists same file
-	if video:
+	if response.status_code == 200:
 		lang['error_message'] = loadSpecialLang(get_user_lang(session.get('email')), "file_already_exists")
 		return render_template('upload.html', lang=lang)
 
 	extension = get_file_extension(file.filename)
-	video_id = Video.query.count() + 1
+
+	count_response = db_api.get_video_count()
+	video_id = count_response.json()['count'] + 1	
+
 	filename = str(video_id) + '.' + extension
 
 	# Save file to uploads folder
 	file.save(os.path.join(UPLOAD_FOLDER, filename))
 
-	saveVideo(hash_index=md5,
-		id = video_id,
-		filename = filename,
-		title = request.form['title'],
-		description = request.form['description'],
-		latitude = request.form['latitude'],
-		longitude = request.form['longitude'],
-		extension = extension,
-		uploader = get_user_username(session.get('email')),
-		hash = md5
-	)
+	db_api.create_video({
+		"hash_index": md5,
+		"id": video_id,
+		"filename": filename,
+		"title": request.form['title'],
+		"description": request.form['description'],
+		"latitude": request.form['latitude'],
+		"longitude": request.form['longitude'],
+		"extension": extension,
+		"uploader": get_user_username(session.get('email')),
+		"hash": md5
+	})
 
 	logging.debug(f"Saving video database")
 	lang['info_message'] = loadSpecialLang(get_user_lang(session.get('email')), "upload_successfull")
@@ -294,14 +335,17 @@ def editVideo(video_id):
 	if (session.get('email') == None): return redirect('/login')
 	lang = loadLang(get_user_lang(session.get('email')))
 
-	video = Video.query.filter_by(id=video_id).first()
-	if not video:
+	response = db_api.get_video(video_id)
+
+	if response.status_code != 200:
 		return render_template('error.html', error_message="Video not found", redirectURL="/map")
 
+	video = response.json()
+
 	lang['video'] = {
-		"id": video.id,
-		"title": video.title,
-		"description": video.description,
+		"id": video['id'],
+		"title": video['title'],
+		"description": video['description'],
 	}
 	return render_template('edit.html', lang=lang)
 
@@ -311,21 +355,31 @@ def doEditVideo(video_id):
 	if (session.get('email') == None): return redirect('/login')
 	lang = loadLang(get_user_lang(session.get('email')))
 
-	video = Video.query.filter_by(id=video_id).first()
-	if not video:
+	response = db_api.get_video(video_id)
+
+	if response.status_code != 200:
 		return render_template('error.html', error_message="Video not found", redirectURL="/map")
 
-	if request.form['title']:
-		video.title = request.form['title']
-	if request.form['description']:
-		video.description = request.form['description']
+	video = response.json()
 
-	sql.session.commit()
+	new_data = {}
+
+	if request.form['title']:
+		new_data['title'] = request.form['title']
+	else:
+		new_data['title'] = video['title']
+
+	if request.form['description']:
+		new_data['description'] = request.form['description']
+	else:
+		new_data['description'] = video['description']
+
+	db_api.update_video(video_id, new_data)
 
 	lang['video'] = {
-		"id": video.id,
-		"title": video.title,
-		"description": video.description,
+		"id": video['id'],
+		"title": new_data['title'],
+		"description": new_data['description'],
 	}
 
 	lang['info_message'] = loadSpecialLang(get_user_lang(session.get('email')), "edit_successfull")
@@ -341,18 +395,21 @@ def watchVideo(video_id):
 	lang = loadLang(get_user_lang(session.get('email')))
 
 	# Fetch video from the database
-	video = Video.query.filter_by(id=video_id).first()
-	if video:
+	response = db_api.get_video(video_id)
+
+	if response.status_code == 200:
+		video = response.json()
+
 		lang['video'] = {
-			"id": video.id,
-			"filename": video.filename,
-			"title": video.title,
-			"description": video.description,
-			"extension": video.extension,
-			"latitude": video.latitude,
-			"longitude": video.longitude,
-			"uploader": video.uploader,
-			"hash": video.hash
+			"id": video['id'],
+			"filename": video['filename'],
+			"title": video['title'],
+			"description": video['description'],
+			"extension": video['extension'],
+			"latitude": video['latitude'],
+			"longitude": video['longitude'],
+			"uploader": video['uploader'],
+			"hash": video['hash']
 		}
 		return render_template('watch.html', lang=lang)
 
@@ -360,28 +417,17 @@ def watchVideo(video_id):
 	
 	return render_template('error.html', error_message="Invalid video", redirectURL="/map")
 
-
 @app.route('/api/videos', methods=['GET'])
 def getVideos():
 	logging.debug("Route /videos called...")
 	if (session.get('email') == None): return jsonify({}), 401
 	
-	videos = Video.query.all()
-	videos_data = [
-		{
-			'id': video.id,
-			'filename': video.filename,
-			'title': video.title,
-			'description': video.description,
-			'latitude': video.latitude,
-			'longitude': video.longitude,
-			'extension': video.extension,
-			'uploader': video.uploader,
-			'hash': video.hash
-		}
-		for video in videos
-	]
-	return jsonify(videos_data)
+	response = db_api.get_all_videos()
+
+	if response.status_code != 200:
+		return jsonify([]), response.status_code
+
+	return jsonify(response.json())
 
 @app.route('/watch/api/getVideo/<int:video_id>', methods=['GET'])
 def getVideo(video_id):
@@ -389,12 +435,18 @@ def getVideo(video_id):
 	if session.get('email') is None:
 		return jsonify({}), 401
 
-	video = Video.query.filter_by(id=video_id).first()
+	response = db_api.get_video(video_id)
+
+	if response.status_code != 200:
+		return jsonify({}), 401
+
+	video = response.json()
+
 	logging.debug(f"app.root_path: {app.root_path}")
 
-	file_path = os.path.join(app.root_path + "/..", UPLOAD_FOLDER, video.filename)
+	file_path = os.path.join(app.root_path + "/..", UPLOAD_FOLDER, video['filename'])
 
-	if not video or not os.path.exists(file_path):
+	if not os.path.exists(file_path):
 		return jsonify({}), 401
 		
 	return send_file(file_path)
@@ -405,9 +457,6 @@ def page_not_found(e):
 	logging.debug("Route /404 called...")
 	return render_template('error.html', error_message="Page not found", redirectURL="/")
 	
-with app.app_context():
-	sql.init_app(app)
-	sql.create_all()
 
 if __name__ == '__main__':
 	app.run(debug=True)
