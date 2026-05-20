@@ -48,6 +48,7 @@ class Activation(db.Model):
 
 # ===== ENDPOINTS (JSON) =====
 
+
 @app.route('/api/user/create', methods=['POST'])
 def create_user():
     """Recebe: {email, username, password, lang, activated}"""

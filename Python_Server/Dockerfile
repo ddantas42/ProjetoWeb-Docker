@@ -6,6 +6,8 @@ WORKDIR /Server
 
 COPY ./Server/ /Server/
 
+RUN mkdir -p /Server/dbs/uploads
+
 RUN bash /Server/setup-Env.sh
 
 CMD ["bash", "/Server/go-Server.sh"]
