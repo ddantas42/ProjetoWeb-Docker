@@ -1,261 +1,389 @@
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-import os
+import json
 import logging
+import os
+import socketserver
 
-app = Flask(__name__)
-
-# Configuração da BD
-db_user = os.getenv('DB_USER', 'projectweb')
-db_password = os.getenv('DB_PASSWORD', 'projectweb')
-db_host = os.getenv('DB_HOST', 'db')
-db_port = os.getenv('DB_PORT', '3306')
-db_name = os.getenv('DB_NAME', 'projectweb')
-
-app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-
-logging.basicConfig(level=logging.DEBUG)
-
-# ===== MODELOS =====
-class Users(db.Model):
-    __tablename__ = 'users'
-    email = db.Column(db.String(50), primary_key=True)
-    username = db.Column(db.String(50), nullable=False)
-    password = db.Column(db.String(50), nullable=False)
-    lang = db.Column(db.String(2), nullable=False)
-    activated = db.Column(db.Boolean, nullable=False)
-
-class Video(db.Model):
-    __tablename__ = 'videos'
-    hash_index = db.Column(db.String(50), primary_key=True)
-    id = db.Column(db.Integer, nullable=False)
-    filename = db.Column(db.String(50), nullable=False)
-    title = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.String(50), nullable=False)
-    latitude = db.Column(db.String(50), nullable=False)
-    longitude = db.Column(db.String(50), nullable=False)
-    extension = db.Column(db.String(50), nullable=False)
-    uploader = db.Column(db.String(50), nullable=False)
-    hash = db.Column(db.String(50), nullable=False)
-
-class Activation(db.Model):
-    __tablename__ = 'activation'
-    hash = db.Column(db.String(50), primary_key=True)
-    email = db.Column(db.String(50), nullable=False)
-
-# ===== ENDPOINTS (JSON) =====
+import pymysql
 
 
-@app.route('/api/user/create', methods=['POST'])
-def create_user():
-    """Recebe: {email, username, password, lang, activated}"""
-    data = request.get_json()
-    try:
-        new_user = Users(
-            email=data['email'],
-            username=data['username'],
-            password=data['password'],
-            lang=data['lang'],
-            activated=data['activated']
+logging.basicConfig(level=logging.INFO)
+
+
+class Database:
+
+    def __init__(self):
+        self.host = os.getenv('DB_HOST', 'db')
+        self.port = int(os.getenv('DB_PORT', '3306'))
+        self.name = os.getenv('DB_NAME', 'projectweb')
+        self.user = os.getenv('DB_USER', 'projectweb')
+        self.password = os.getenv('DB_PASSWORD', 'projectweb')
+
+    def connect(self):
+        return pymysql.connect(
+            host=self.host,
+            port=self.port,
+            user=self.user,
+            password=self.password,
+            database=self.name,
+            autocommit=True,
+            cursorclass=pymysql.cursors.DictCursor
         )
-        db.session.add(new_user)
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'User created'}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 400
 
-@app.route('/api/user/get', methods=['POST'])
-def get_user():
-    """Recebe: {email}"""
-    data = request.get_json()
-    user = Users.query.filter_by(email=data['email']).first()
-    if user:
-        return jsonify({
-            'success': True,
-            'email': user.email,
-            'username': user.username,
-            'password': user.password,
-            'lang': user.lang,
-            'activated': user.activated
-        }), 200
-    return jsonify({'success': False, 'error': 'User not found'}), 404
+    def ensure_schema(self):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "CREATE TABLE IF NOT EXISTS users ("
+                    "email VARCHAR(50) PRIMARY KEY, "
+                    "username VARCHAR(50) NOT NULL, "
+                    "password VARCHAR(50) NOT NULL, "
+                    "lang VARCHAR(2) NOT NULL, "
+                    "activated BOOLEAN NOT NULL"
+                    ")"
+                )
 
-@app.route('/api/user/check-email', methods=['POST'])
-def check_email_exists():
-    """Recebe: {email}"""
-    data = request.get_json()
-    user = Users.query.filter_by(email=data['email']).first()
-    return jsonify({'exists': user is not None}), 200
+                cursor.execute(
+                    "CREATE TABLE IF NOT EXISTS videos ("
+                    "hash_index VARCHAR(50) PRIMARY KEY, "
+                    "id INT NOT NULL, "
+                    "filename VARCHAR(50) NOT NULL, "
+                    "title VARCHAR(50) NOT NULL, "
+                    "description VARCHAR(50) NOT NULL, "
+                    "latitude VARCHAR(50) NOT NULL, "
+                    "longitude VARCHAR(50) NOT NULL, "
+                    "extension VARCHAR(50) NOT NULL, "
+                    "uploader VARCHAR(50) NOT NULL, "
+                    "`hash` VARCHAR(50) NOT NULL"
+                    ")"
+                )
 
-@app.route('/api/user/update', methods=['PUT'])
-def update_user():
-    """Recebe: {email, username, password, lang, activated}"""
-    data = request.get_json()
-    user = Users.query.filter_by(email=data['email']).first()
-    if user:
-        user.username = data.get('username', user.username)
-        user.password = data.get('password', user.password)
-        user.lang = data.get('lang', user.lang)
-        user.activated = data.get('activated', user.activated)
-        db.session.commit()
-        return jsonify({'success': True}), 200
-    return jsonify({'success': False, 'error': 'User not found'}), 404
+                cursor.execute(
+                    "CREATE TABLE IF NOT EXISTS activation ("
+                    "hash VARCHAR(50) PRIMARY KEY, "
+                    "email VARCHAR(50) NOT NULL"
+                    ")"
+                )
 
-@app.route('/api/video/create', methods=['POST'])
-def create_video():
-    """Recebe: {hash_index, id, filename, title, description, latitude, longitude, extension, uploader, hash}"""
-    data = request.get_json()
-    try:
-        new_video = Video(
-            hash_index=data['hash_index'],
-            id=data['id'],
-            filename=data['filename'],
-            title=data['title'],
-            description=data['description'],
-            latitude=data['latitude'],
-            longitude=data['longitude'],
-            extension=data['extension'],
-            uploader=data['uploader'],
-            hash=data['hash']
+    def handle(self, request_json):
+        action = request_json.get('action', '')
+        data = request_json.get('data', {}) or {}
+
+        handlers = {
+            'user.create': self.create_user,
+            'user.get': self.get_user,
+            'user.check-email': self.check_email,
+            'user.update': self.update_user,
+            'video.create': self.create_video,
+            'video.get-by-hash': self.get_video_by_hash,
+            'video.get-by-id': self.get_video_by_id,
+            'video.get-by-uploader': self.get_videos_by_uploader,
+            'video.get-all': self.get_all_videos,
+            'video.update': self.update_video,
+            'video.count': self.get_video_count,
+            'activation.create': self.create_activation,
+            'activation.get': self.get_activation,
+            'activation.delete': self.delete_activation,
+        }
+
+        handler = handlers.get(action)
+        if handler is None:
+            return self.error_response(400, f'Unknown action: {action}')
+
+        try:
+            return handler(data)
+        except Exception as error:
+            return self.error_response(400, str(error))
+
+    def create_user(self, data):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO users (email, username, password, lang, activated) VALUES (%s, %s, %s, %s, %s)",
+                    (
+                        self.require(data, 'email'),
+                        self.require(data, 'username'),
+                        self.require(data, 'password'),
+                        self.require(data, 'lang'),
+                        bool(data.get('activated', False))
+                    )
+                )
+
+        return self.success_response(201, 'User created')
+
+    def get_user(self, data):
+        row = self.fetch_one(
+            "SELECT email, username, password, lang, activated FROM users WHERE email = %s LIMIT 1",
+            (self.require(data, 'email'),)
         )
-        db.session.add(new_video)
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Video created'}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 400
 
-@app.route('/api/video/get-by-hash', methods=['POST'])
-def get_video_by_hash():
-    """Recebe: {hash_index}"""
-    data = request.get_json()
-    video = Video.query.filter_by(hash_index=data['hash_index']).first()
-    if video:
-        return jsonify({
+        if row is None:
+            return self.error_response(404, 'User not found')
+
+        response = self.success_response(200)
+        response.update({
+            'email': row['email'],
+            'username': row['username'],
+            'password': row['password'],
+            'lang': row['lang'],
+            'activated': bool(row['activated'])
+        })
+        return response
+
+    def check_email(self, data):
+        row = self.fetch_one(
+            "SELECT 1 AS value FROM users WHERE email = %s LIMIT 1",
+            (self.require(data, 'email'),)
+        )
+
+        response = self.success_response(200)
+        response['exists'] = row is not None
+        return response
+
+    def update_user(self, data):
+        current = self.fetch_one(
+            "SELECT email, username, password, lang, activated FROM users WHERE email = %s LIMIT 1",
+            (self.require(data, 'email'),)
+        )
+
+        if current is None:
+            return self.error_response(404, 'User not found')
+
+        username = data.get('username', current['username'])
+        password = data.get('password', current['password'])
+        lang = data.get('lang', current['lang'])
+        activated = data.get('activated', bool(current['activated']))
+
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE users SET username = %s, password = %s, lang = %s, activated = %s WHERE email = %s",
+                    (username, password, lang, activated, current['email'])
+                )
+
+        return self.success_response(200)
+
+    def create_video(self, data):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO videos (hash_index, id, filename, title, description, latitude, longitude, extension, uploader, `hash`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (
+                        self.require(data, 'hash_index'),
+                        data['id'],
+                        self.require(data, 'filename'),
+                        self.require(data, 'title'),
+                        self.require(data, 'description'),
+                        self.require(data, 'latitude'),
+                        self.require(data, 'longitude'),
+                        self.require(data, 'extension'),
+                        self.require(data, 'uploader'),
+                        self.require(data, 'hash')
+                    )
+                )
+
+        return self.success_response(201, 'Video created')
+
+    def get_video_by_hash(self, data):
+        row = self.fetch_one(
+            "SELECT hash_index, id, filename, title, description, latitude, longitude, extension, uploader, `hash` FROM videos WHERE hash_index = %s LIMIT 1",
+            (self.require(data, 'hash_index'),)
+        )
+
+        if row is None:
+            return self.error_response(404, 'Video not found')
+
+        response = self.success_response(200)
+        response.update(self.video_to_response(row))
+        return response
+
+    def get_video_by_id(self, data):
+        row = self.fetch_one(
+            "SELECT hash_index, id, filename, title, description, latitude, longitude, extension, uploader, `hash` FROM videos WHERE id = %s LIMIT 1",
+            (data['id'],)
+        )
+
+        if row is None:
+            return self.error_response(404, 'Video not found')
+
+        response = self.success_response(200)
+        response.update(self.video_to_response(row))
+        return response
+
+    def get_videos_by_uploader(self, data):
+        rows = self.fetch_all(
+            "SELECT hash_index, id, filename, title, description, latitude, longitude, extension, uploader, `hash` FROM videos WHERE uploader = %s ORDER BY id ASC",
+            (self.require(data, 'uploader'),)
+        )
+
+        response = self.success_response(200)
+        response['videos'] = [self.video_to_response(row) for row in rows]
+        return response
+
+    def get_all_videos(self, data):
+        rows = self.fetch_all(
+            "SELECT hash_index, id, filename, title, description, latitude, longitude, extension, uploader, `hash` FROM videos ORDER BY id ASC"
+        )
+
+        response = self.success_response(200)
+        response['videos'] = [self.video_to_response(row) for row in rows]
+        return response
+
+    def update_video(self, data):
+        current = self.fetch_one(
+            "SELECT hash_index, id, filename, title, description, latitude, longitude, extension, uploader, `hash` FROM videos WHERE id = %s LIMIT 1",
+            (data['id'],)
+        )
+
+        if current is None:
+            return self.error_response(404, 'Video not found')
+
+        title = data.get('title', current['title'])
+        description = data.get('description', current['description'])
+
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE videos SET title = %s, description = %s WHERE id = %s",
+                    (title, description, current['id'])
+                )
+
+        return self.success_response(200)
+
+    def get_video_count(self, data):
+        row = self.fetch_one("SELECT COUNT(*) AS count FROM videos")
+        response = self.success_response(200)
+        response['count'] = int(row['count']) if row is not None else 0
+        return response
+
+    def create_activation(self, data):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO activation (hash, email) VALUES (%s, %s)",
+                    (self.require(data, 'hash'), self.require(data, 'email'))
+                )
+
+        return self.success_response(201)
+
+    def get_activation(self, data):
+        row = self.fetch_one(
+            "SELECT hash, email FROM activation WHERE hash = %s LIMIT 1",
+            (self.require(data, 'hash'),)
+        )
+
+        if row is None:
+            return self.error_response(404, 'Activation not found')
+
+        response = self.success_response(200)
+        response['email'] = row['email']
+        return response
+
+    def delete_activation(self, data):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                updated_rows = cursor.execute(
+                    "DELETE FROM activation WHERE hash = %s",
+                    (self.require(data, 'hash'),)
+                )
+
+        if updated_rows == 0:
+            return self.error_response(404, 'Activation not found')
+
+        return self.success_response(200)
+
+    def fetch_one(self, query, params=()):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, params)
+                return cursor.fetchone()
+
+    def fetch_all(self, query, params=()):
+        with self.connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, params)
+                return cursor.fetchall()
+
+    def video_to_response(self, row):
+        return {
+            'hash_index': row['hash_index'],
+            'id': row['id'],
+            'filename': row['filename'],
+            'title': row['title'],
+            'description': row['description'],
+            'latitude': row['latitude'],
+            'longitude': row['longitude'],
+            'extension': row['extension'],
+            'uploader': row['uploader'],
+            'hash': row['hash']
+        }
+
+    def success_response(self, status_code, message=None):
+        response = {
             'success': True,
-            'hash_index': video.hash_index,
-            'id': video.id,
-            'filename': video.filename,
-            'title': video.title,
-            'description': video.description,
-            'latitude': video.latitude,
-            'longitude': video.longitude,
-            'extension': video.extension,
-            'uploader': video.uploader
-        }), 200
-    return jsonify({'success': False, 'error': 'Video not found'}), 404
+            'status_code': status_code
+        }
 
-@app.route('/api/video/get-by-id', methods=['POST'])
-def get_video_by_id():
-    """Recebe: {id}"""
-    data = request.get_json()
-    video = Video.query.filter_by(id=data['id']).first()
-    if video:
-        return jsonify({
-            'success': True,
-            'hash_index': video.hash_index,
-            'id': video.id,
-            'filename': video.filename,
-            'title': video.title,
-            'description': video.description,
-            'latitude': video.latitude,
-            'longitude': video.longitude,
-            'extension': video.extension,
-            'uploader': video.uploader
-        }), 200
-    return jsonify({'success': False, 'error': 'Video not found'}), 404
+        if message is not None:
+            response['message'] = message
 
-@app.route('/api/videos/get-by-uploader', methods=['POST'])
-def get_videos_by_uploader():
-    """Recebe: {uploader}"""
-    data = request.get_json()
-    videos = Video.query.filter_by(uploader=data['uploader']).all()
-    video_list = [{
-        'hash_index': v.hash_index,
-        'id': v.id,
-        'filename': v.filename,
-        'title': v.title,
-        'description': v.description,
-        'latitude': v.latitude,
-        'longitude': v.longitude,
-        'extension': v.extension,
-        'uploader': v.uploader
-    } for v in videos]
-    return jsonify({'success': True, 'videos': video_list}), 200
+        return response
 
-@app.route('/api/videos/get-all', methods=['GET'])
-def get_all_videos():
-    """Retorna todos os vídeos"""
-    videos = Video.query.all()
-    video_list = [{
-        'hash_index': v.hash_index,
-        'id': v.id,
-        'filename': v.filename,
-        'title': v.title,
-        'description': v.description,
-        'latitude': v.latitude,
-        'longitude': v.longitude,
-        'extension': v.extension,
-        'uploader': v.uploader
-    } for v in videos]
-    return jsonify({'success': True, 'videos': video_list}), 200
+    def error_response(self, status_code, message):
+        return {
+            'success': False,
+            'status_code': status_code,
+            'error': message or 'Unknown error'
+        }
 
-@app.route('/api/video/update', methods=['PUT'])
-def update_video():
-    """Recebe: {id, title, description}"""
-    data = request.get_json()
-    video = Video.query.filter_by(id=data['id']).first()
-    if video:
-        video.title = data.get('title', video.title)
-        video.description = data.get('description', video.description)
-        db.session.commit()
-        return jsonify({'success': True}), 200
-    return jsonify({'success': False, 'error': 'Video not found'}), 404
+    def require(self, data, key):
+        if key not in data or data[key] is None:
+            raise ValueError(f'Missing field: {key}')
 
-@app.route('/api/activation/create', methods=['POST'])
-def create_activation():
-    """Recebe: {hash, email}"""
-    data = request.get_json()
-    try:
-        new_activation = Activation(hash=data['hash'], email=data['email'])
-        db.session.add(new_activation)
-        db.session.commit()
-        return jsonify({'success': True}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 400
+        return data[key]
 
-@app.route('/api/activation/get', methods=['POST'])
-def get_activation():
-    """Recebe: {hash}"""
-    data = request.get_json()
-    activation = Activation.query.filter_by(hash=data['hash']).first()
-    if activation:
-        return jsonify({'success': True, 'email': activation.email}), 200
-    return jsonify({'success': False, 'error': 'Activation not found'}), 404
 
-@app.route('/api/activation/delete', methods=['DELETE'])
-def delete_activation():
-    """Recebe: {hash}"""
-    data = request.get_json()
-    activation = Activation.query.filter_by(hash=data['hash']).first()
-    if activation:
-        db.session.delete(activation)
-        db.session.commit()
-        return jsonify({'success': True}), 200
-    return jsonify({'success': False, 'error': 'Activation not found'}), 404
+class RequestHandler(socketserver.StreamRequestHandler):
 
-@app.route('/api/video/count', methods=['GET'])
-def get_video_count():
-    """Retorna total de vídeos"""
-    count = Video.query.count()
-    return jsonify({'success': True, 'count': count}), 200
+    def handle(self):
+        raw_request = self.rfile.readline().decode('utf-8').strip()
+        if not raw_request:
+            self.write_response(self.server.database.error_response(400, 'Empty request'))
+            return
+
+        try:
+            request_json = json.loads(raw_request)
+        except json.JSONDecodeError as error:
+            self.write_response(self.server.database.error_response(400, str(error)))
+            return
+
+        response = self.server.database.handle(request_json)
+        self.write_response(response)
+
+    def write_response(self, response):
+        payload = (json.dumps(response) + '\n').encode('utf-8')
+        self.wfile.write(payload)
+        self.wfile.flush()
+
+
+class ThreadedSocketServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+
+    allow_reuse_address = True
+
+    def __init__(self, server_address, handler_class, database):
+        super().__init__(server_address, handler_class)
+        self.database = database
+
+
+def main():
+    port = int(os.getenv('DATA_SERVER_PORT', '5000'))
+    database = Database()
+    database.ensure_schema()
+
+    with ThreadedSocketServer(('0.0.0.0', port), RequestHandler, database) as server:
+        logging.info('Data server listening on port %s', port)
+        server.serve_forever()
+
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+    main()
     app.run(host='0.0.0.0', port=5000, debug=True)

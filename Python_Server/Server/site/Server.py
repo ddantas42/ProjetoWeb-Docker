@@ -11,7 +11,6 @@ import hashlib
 import logging
 import re
 import os
-import requests
 
 # Regular expressions
 emailRegEx = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
@@ -95,7 +94,7 @@ def home():
 
 	user_videos = []
 	if response.status_code == 200:
-		user_videos = response.json()
+		user_videos = response.json().get('videos', [])
 	
 	return render_template('home.html', lang=lang, videos=user_videos)
 
@@ -427,7 +426,7 @@ def getVideos():
 	if response.status_code != 200:
 		return jsonify([]), response.status_code
 
-	return jsonify(response.json())
+	return jsonify(response.json().get('videos', []))
 
 @app.route('/watch/api/getVideo/<int:video_id>', methods=['GET'])
 def getVideo(video_id):

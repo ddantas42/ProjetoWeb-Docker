@@ -1,51 +1,83 @@
-import requests
+import json
+import socket
 import os
-import logging
+
+
+class SocketResponse:
+
+    def __init__(self, status_code, payload):
+        self.status_code = status_code
+        self._payload = payload
+
+    def json(self):
+        return self._payload
 
 class DataServerAPI:
     def __init__(self):
-        self.base_url = f"http://{os.getenv('DATA_SERVER_HOST', 'data_server')}:{os.getenv('DATA_SERVER_PORT', '5000')}"
+        self.host = os.getenv('DATA_SERVER_HOST', 'data_server')
+        self.port = int(os.getenv('DATA_SERVER_PORT', '5000'))
+
+    def _request(self, action, data=None):
+        payload = {
+            'action': action,
+            'data': data or {}
+        }
+
+        try:
+            with socket.create_connection((self.host, self.port), timeout=10) as connection:
+                connection.sendall((json.dumps(payload) + "\n").encode('utf-8'))
+                with connection.makefile('r', encoding='utf-8') as reader:
+                    response_text = reader.readline()
+
+                if not response_text:
+                    return SocketResponse(502, {'success': False, 'error': 'Empty response from data server'})
+
+                response_data = json.loads(response_text)
+                status_code = response_data.get('status_code', 200 if response_data.get('success', True) else 400)
+                return SocketResponse(status_code, response_data)
+        except (OSError, json.JSONDecodeError) as error:
+            return SocketResponse(503, {'success': False, 'error': str(error)})
     
     def create_user(self, data):
-        return requests.post(f"{self.base_url}/api/user/create", json=data)
+        return self._request('user.create', data)
     
     def get_user(self, email):
-        return requests.post(f"{self.base_url}/api/user/get", json={"email": email})
+        return self._request('user.get', {"email": email})
     
     def check_email_exists(self, email):
-        return requests.post(f"{self.base_url}/api/user/check-email", json={"email": email})
+        return self._request('user.check-email', {"email": email})
     
     def update_user(self, email, data):
         data["email"] = email
-        return requests.put(f"{self.base_url}/api/user/update", json=data)
+        return self._request('user.update', data)
     
     def create_video(self, data):
-        return requests.post(f"{self.base_url}/api/video/create", json=data)
+        return self._request('video.create', data)
     
     def get_video_by_hash(self, hash_index):
-        return requests.post(f"{self.base_url}/api/video/get-by-hash", json={"hash_index": hash_index})
+        return self._request('video.get-by-hash', {"hash_index": hash_index})
     
     def get_video(self, video_id):
-        return requests.post(f"{self.base_url}/api/video/get-by-id", json={"id": video_id})
+        return self._request('video.get-by-id', {"id": video_id})
     
     def get_videos_by_uploader(self, uploader):
-        return requests.post(f"{self.base_url}/api/videos/get-by-uploader", json={"uploader": uploader})
+        return self._request('video.get-by-uploader', {"uploader": uploader})
     
     def get_all_videos(self):
-        return requests.get(f"{self.base_url}/api/videos/get-all")
+        return self._request('video.get-all')
     
     def update_video(self, video_id, data):
         data["id"] = video_id
-        return requests.put(f"{self.base_url}/api/video/update", json=data)
+        return self._request('video.update', data)
     
     def create_activation(self, data):
-        return requests.post(f"{self.base_url}/api/activation/create", json=data)
+        return self._request('activation.create', data)
     
     def get_activation(self, hash):
-        return requests.post(f"{self.base_url}/api/activation/get", json={"hash": hash})
+        return self._request('activation.get', {"hash": hash})
     
     def delete_activation(self, hash):
-        return requests.delete(f"{self.base_url}/api/activation/delete", json={"hash": hash})
+        return self._request('activation.delete', {"hash": hash})
     
     def get_video_count(self):
-        return requests.get(f"{self.base_url}/api/video/count")
+        return self._request('video.count')
