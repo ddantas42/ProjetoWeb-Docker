@@ -95,7 +95,7 @@ def home():
 
 	user_videos = []
 	if response.status_code == 200:
-		user_videos = response.json()
+		user_videos = response.json().get('videos', [])
 	
 	return render_template('home.html', lang=lang, videos=user_videos)
 
@@ -405,7 +405,7 @@ def watchVideo(video_id):
 			"filename": video['filename'],
 			"title": video['title'],
 			"description": video['description'],
-			"extension": video['extension'],
+			"extension": video['extension'].lower(),
 			"latitude": video['latitude'],
 			"longitude": video['longitude'],
 			"uploader": video['uploader'],
@@ -427,7 +427,7 @@ def getVideos():
 	if response.status_code != 200:
 		return jsonify([]), response.status_code
 
-	return jsonify(response.json())
+	return jsonify(response.json().get('videos', []))
 
 @app.route('/watch/api/getVideo/<int:video_id>', methods=['GET'])
 def getVideo(video_id):
@@ -449,7 +449,8 @@ def getVideo(video_id):
 	if not os.path.exists(file_path):
 		return jsonify({}), 401
 		
-	return send_file(file_path)
+	mimetype = 'video/mp4' if video['extension'].lower() == 'mp4' else ('audio/mpeg' if video['extension'].lower() == 'mp3' else f'image/{video["extension"].lower()}')
+	return send_file(file_path, mimetype=mimetype, conditional=True)
 	
 # 404 error
 @app.errorhandler(404)

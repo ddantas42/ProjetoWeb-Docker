@@ -239,7 +239,8 @@ def get_video_by_hash():
             'latitude': video.latitude,
             'longitude': video.longitude,
             'extension': video.extension,
-            'uploader': video.uploader
+            'uploader': video.uploader,
+            'hash': video.hash
         }), 200
     
     logger.warning(f"Video não encontrado: {data['hash_index']}")
@@ -268,7 +269,8 @@ def get_video_by_id():
             'latitude': video.latitude,
             'longitude': video.longitude,
             'extension': video.extension,
-            'uploader': video.uploader
+            'uploader': video.uploader,
+            'hash': video.hash
         }), 200
     
     logger.warning(f"Video não encontrado: {data['id']}")
@@ -294,7 +296,8 @@ def get_videos_by_uploader():
         'latitude': v.latitude,
         'longitude': v.longitude,
         'extension': v.extension,
-        'uploader': v.uploader
+        'uploader': v.uploader,
+            'hash': v.hash
     } for v in videos]
     
     logger.info(f"Videos obtidos do uploader: {data['uploader']} (total: {len(videos)})")
@@ -314,7 +317,8 @@ def get_all_videos():
         'latitude': v.latitude,
         'longitude': v.longitude,
         'extension': v.extension,
-        'uploader': v.uploader
+        'uploader': v.uploader,
+            'hash': v.hash
     } for v in videos]
     
     logger.info(f"Todos os videos obtidos (total: {len(videos)})")
@@ -415,16 +419,216 @@ def get_video_count():
 def health_check():
     """Verifica a saúde da API"""
     try:
-        db.session.execute('SELECT 1')
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
         logger.debug("Health check OK")
         return jsonify({'status': 'healthy', 'database': 'connected'}), 200
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return jsonify({'status': 'unhealthy', 'database': 'disconnected', 'error': str(e)}), 500
 
+def process_socket_request(req):
+    action = req.get('action')
+    payload = req.get('payload', {})
+    
+    with app.app_context():
+        try:
+            if action == 'create_user':
+                existing = Users.query.filter_by(email=payload['email']).first()
+                if existing:
+                    return {'success': False, 'error': 'Email já registado', 'status': 409}
+                new_user = Users(
+                    email=payload['email'],
+                    username=payload['username'],
+                    password=payload['password'],
+                    lang=payload['lang'],
+                    activated=payload.get('activated', False)
+                )
+                db.session.add(new_user)
+                db.session.commit()
+                return {'success': True, 'message': 'User criado com sucesso', 'status': 201}
+                
+            elif action == 'get_user':
+                user = Users.query.filter_by(email=payload['email']).first()
+                if user:
+                    return {
+                        'success': True,
+                        'email': user.email,
+                        'username': user.username,
+                        'password': user.password,
+                        'lang': user.lang,
+                        'activated': user.activated,
+                        'status': 200
+                    }
+                return {'success': False, 'error': 'User não encontrado', 'status': 404}
+                
+            elif action == 'check_email':
+                user = Users.query.filter_by(email=payload['email']).first()
+                return {'success': True, 'exists': user is not None, 'status': 200}
+                
+            elif action == 'update_user':
+                user = Users.query.filter_by(email=payload['email']).first()
+                if user:
+                    user.username = payload.get('username', user.username)
+                    user.password = payload.get('password', user.password)
+                    user.lang = payload.get('lang', user.lang)
+                    user.activated = payload.get('activated', user.activated)
+                    db.session.commit()
+                    return {'success': True, 'message': 'User atualizado', 'status': 200}
+                return {'success': False, 'error': 'User não encontrado', 'status': 404}
+                
+            elif action == 'create_video':
+                existing = Video.query.filter_by(hash_index=payload['hash_index']).first()
+                if existing:
+                    return {'success': False, 'error': 'Video já existe', 'status': 409}
+                new_video = Video(
+                    hash_index=payload['hash_index'],
+                    id=payload.get('id', 0),
+                    filename=payload['filename'],
+                    title=payload.get('title', ''),
+                    description=payload.get('description', ''),
+                    latitude=payload.get('latitude', '0'),
+                    longitude=payload.get('longitude', '0'),
+                    extension=payload['extension'],
+                    uploader=payload['uploader'],
+                    hash=payload.get('hash', '')
+                )
+                db.session.add(new_video)
+                db.session.commit()
+                return {'success': True, 'message': 'Video criado com sucesso', 'status': 201}
+                
+            elif action == 'get_video_by_hash':
+                video = Video.query.filter_by(hash_index=payload['hash_index']).first()
+                if video:
+                    return {
+                        'success': True,
+                        'hash_index': video.hash_index,
+                        'id': video.id,
+                        'filename': video.filename,
+                        'title': video.title,
+                        'description': video.description,
+                        'latitude': video.latitude,
+                        'longitude': video.longitude,
+                        'extension': video.extension,
+                        'uploader': video.uploader,
+            'hash': video.hash,
+                        'status': 200
+                    }
+                return {'success': False, 'error': 'Video não encontrado', 'status': 404}
+                
+            elif action == 'get_video_by_id':
+                video = Video.query.filter_by(id=payload['id']).first()
+                if video:
+                    return {
+                        'success': True,
+                        'hash_index': video.hash_index,
+                        'id': video.id,
+                        'filename': video.filename,
+                        'title': video.title,
+                        'description': video.description,
+                        'latitude': video.latitude,
+                        'longitude': video.longitude,
+                        'extension': video.extension,
+                        'uploader': video.uploader,
+            'hash': video.hash,
+                        'status': 200
+                    }
+                return {'success': False, 'error': 'Video não encontrado', 'status': 404}
+                
+            elif action == 'get_videos_by_uploader':
+                videos = Video.query.filter_by(uploader=payload['uploader']).all()
+                video_list = [{
+                    'hash_index': v.hash_index,
+                    'id': v.id,
+                    'filename': v.filename,
+                    'title': v.title,
+                    'description': v.description,
+                    'latitude': v.latitude,
+                    'longitude': v.longitude,
+                    'extension': v.extension,
+                    'uploader': v.uploader,
+            'hash': v.hash
+                } for v in videos]
+                return {'success': True, 'videos': video_list, 'status': 200}
+                
+            elif action == 'get_all_videos':
+                videos = Video.query.all()
+                video_list = [{
+                    'hash_index': v.hash_index,
+                    'id': v.id,
+                    'filename': v.filename,
+                    'title': v.title,
+                    'description': v.description,
+                    'latitude': v.latitude,
+                    'longitude': v.longitude,
+                    'extension': v.extension,
+                    'uploader': v.uploader,
+            'hash': v.hash
+                } for v in videos]
+                return {'success': True, 'videos': video_list, 'status': 200}
+                
+            elif action == 'update_video':
+                video = Video.query.filter_by(id=payload['id']).first()
+                if video:
+                    video.title = payload.get('title', video.title)
+                    video.description = payload.get('description', video.description)
+                    db.session.commit()
+                    return {'success': True, 'message': 'Video atualizado', 'status': 200}
+                return {'success': False, 'error': 'Video não encontrado', 'status': 404}
+                
+            elif action == 'create_activation':
+                new_activation = Activation(hash=payload['hash'], email=payload['email'])
+                db.session.add(new_activation)
+                db.session.commit()
+                return {'success': True, 'message': 'Activation criada', 'status': 201}
+                
+            elif action == 'get_activation':
+                activation = Activation.query.filter_by(hash=payload['hash']).first()
+                if activation:
+                    return {'success': True, 'email': activation.email, 'status': 200}
+                return {'success': False, 'error': 'Activation não encontrada', 'status': 404}
+                
+            elif action == 'delete_activation':
+                activation = Activation.query.filter_by(hash=payload['hash']).first()
+                if activation:
+                    db.session.delete(activation)
+                    db.session.commit()
+                    return {'success': True, 'message': 'Activation deletada', 'status': 200}
+                return {'success': False, 'error': 'Activation não encontrada', 'status': 404}
+                
+            elif action == 'get_video_count':
+                count = Video.query.count()
+                return {'success': True, 'count': count, 'status': 200}
+                
+            else:
+                return {'success': False, 'error': f'Unknown action: {action}', 'status': 400}
+                
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error processing socket request {action}: {e}")
+            return {'success': False, 'error': str(e), 'status': 500}
+
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
-        logger.info("Database tables created/verified")
-    logger.info("Data Server iniciado em 0.0.0.0:5000")
+        import time
+        max_retries = 30
+        for i in range(max_retries):
+            try:
+                db.create_all()
+                logger.info("Database tables created/verified")
+                break
+            except Exception as e:
+                logger.warning(f"Database not ready yet, retrying in 2 seconds... ({i+1}/{max_retries})")
+                time.sleep(2)
+        else:
+            logger.error("Could not connect to database after several retries.")
+            exit(1)
+        
+    import threading
+    from socket_server import start_socket_server
+    socket_thread = threading.Thread(target=start_socket_server, args=(process_socket_request,))
+    socket_thread.daemon = True
+    socket_thread.start()
+    
+    logger.info("Data Server (REST API) iniciado em 0.0.0.0:5000")
     app.run(host='0.0.0.0', port=5000, debug=os.getenv('FLASK_DEBUG', 'False') == 'True')

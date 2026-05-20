@@ -19,10 +19,7 @@
 			{{ lang.watch.browser_not_support_video }}
 		</video>
 
-		{% endif %}
-
-		{% if lang.video.extension == "mp3" %}
-
+		{% elif lang.video.extension == "mp3" %}
 		<!-- Audio Player -->
 		<audio controls>
 			<source src="api/getVideo/{{ lang.video.id }}" type="audio/mp3">
@@ -30,10 +27,8 @@
 		</audio>
 
 		{% else %}
-		
 		<!-- Image -->
 		<img src="api/getVideo/{{ lang.video.id }}" alt="Image" >
-		
 
 		{% endif %}
 	
