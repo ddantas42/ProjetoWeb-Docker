@@ -1,11 +1,17 @@
-FROM ubuntu:latest
+FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y python3 python3-pip python3-venv
+WORKDIR /app
 
-WORKDIR /Server
+COPY ./Server/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./Server/ /Server/
+COPY ./Server/ /app/
 
-RUN bash /Server/setup-Env.sh
+RUN chmod +x /app/setup-Env.sh && /app/setup-Env.sh
 
-CMD ["bash", "/Server/go-Server.sh"]
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:80/login')" || exit 1
+
+CMD ["bash", "/app/go-Server.sh"]
