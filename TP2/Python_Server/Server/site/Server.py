@@ -444,7 +444,7 @@ def getVideo(video_id):
 
 	logging.debug(f"app.root_path: {app.root_path}")
 
-	file_path = os.path.join(app.root_path + "/..", UPLOAD_FOLDER, video['filename'])
+	file_path = os.path.join(UPLOAD_FOLDER, video['filename'])
 
 	if not os.path.exists(file_path):
 		return jsonify({}), 401
