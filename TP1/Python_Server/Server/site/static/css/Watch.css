@@ -1,0 +1,60 @@
+body {
+	font-family: Arial, sans-serif;
+}
+
+.container { /*Caixa Translúcida*/
+	margin-top: 15px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.750);
+    padding: 40px;
+	padding-top: 23px;
+	padding-bottom: 6px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.589);
+    width: 100%;
+    max-width: 400px;
+}
+
+h1 { /*Título*/
+	margin-top: -5px;
+    font-size: x-large;
+    color: black;
+}
+
+video, audio { /*Quando é ou Vídeo ou Áudio*/
+    width: 100%;
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+video { /*Ajusta o Tamanho do Vídeo na Página*/
+    height: auto;
+    max-height: 300px;
+}
+
+
+img { /*Quando é uma Imagem*/
+    width: 100%;
+    max-width: 100%;
+	height: auto;
+    max-height: 300px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.description { /*Descrição*/
+    margin-top: 10px;
+    font-size: medium;
+    color: black;
+    text-align: left;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.250);
+}
+
+.description strong { /*"Title", "Description" e "Location"*/
+    font-weight: bold;
+    color: #555;
+}

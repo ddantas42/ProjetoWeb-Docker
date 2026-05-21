@@ -1,0 +1,45 @@
+li { /*"Upload Content", "Map" e "Log out"*/
+    min-width: 175px;
+    margin: 0 5px;
+}
+
+.box a { /*Transformação em Botões*/
+    display: block;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: rgb(240, 100, 100);
+    border: 1px solid rgba(255, 255, 255, 0.700);
+    border-radius: 5px;
+    transition: background-color 0.7s ease, color 1s ease, transform 0.8s ease;
+}
+
+.box a:hover { /*Animações para os Botões*/
+    background-color: rgba(255, 255, 255, 0.8);
+    color: green;
+    transform: scale(1.05);
+}
+
+.video-list { /*"Video List"*/
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.479);
+    background: rgba(255, 255, 255, 0.750);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    list-style: none;
+}
+
+.video-list li.box {
+    flex: 1 1 calc(33.333% - 10px);
+    max-width: calc(33.333% - 10px);
+}
+
+.video-list li.box a {
+    background-color: rgba(0, 0, 0, 0);
+    border: 1px solid rgba(0, 0, 0, 0.479);
+}

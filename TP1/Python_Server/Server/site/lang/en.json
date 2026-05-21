@@ -1,0 +1,89 @@
+{
+	"language": "en",
+	"error": {
+		"invalid_link": "Invalid link",
+		"video_not_found": "Video not found"
+	},
+	
+	"home": {
+		"upload_video": "Upload Video",
+		"logout": "Log Out",
+		"map": "Map",
+		"my_videos": "My Videos",
+		"video_not_supported": "Your browser does not support the video tag."
+	},
+
+	"login": {
+		"login_title": "Log in to Map Share",
+		"email": "Email",
+		"password": "Password",
+		"login": "Log In",
+		"register": "Register",
+		"no_account": "Don't have an account?"
+	},
+
+	"register": {
+		"create_account": "Create Account",
+		"register_title": "Sign up for Map Share",
+		"username": "Username",
+		"email": "Email",
+		"password": "Password",
+		"confirm_password": "Confirm Password",
+		"register": "Register",
+		"already_have_account": "Already have an account?",
+		"login": "Log In"
+	},
+
+	"map": {
+		"return_home": "Return to Home",
+		"update_map": "Update Map",
+		"search_placeholder": "Search for a location",
+		"search_map": "Search Map"
+	},
+
+	"upload": {
+		"upload_title": "Upload Content to Map Share",
+		"return_home": "Return to Home Page",
+		"upload_content": "Upload Content",
+		"select_file": "Select File",
+		"upload": "Upload",
+		"title": "Title",
+		"description": "Description",
+		"latitude": "Latitude",
+		"longitude": "Longitude",
+		"put_my_coords": "Use My Coordinates"
+	},
+
+	"edit": {
+		"edit_title": "Edit Video",
+		"return_home": "Return to Home Page",
+		"update_video": "Update Video",
+		"title": "Title",
+		"description": "Description"
+	},
+
+	"watch": {
+		"title": "Title",
+		"description": "Description",
+		"location": "Location",
+		"latitude": "Latitude",
+		"longitude": "Longitude",
+		"browser_not_support_video": "Your browser does not support the video tag.",
+		"browser_not_support_audio": "Your browser does not support the audio tag."
+	},
+
+	"special": {
+		"invalid_password": "Invalid password",
+		"invalid_email": "Invalid email",
+		"not_activated": "Account not activated",
+		"no_file": "No file selected",
+		"invalid_file": "Invalid file",
+		"fill_all": "Fill all fields",
+		"file_already_exists": "File already exists",
+		"upload_successfull": "Upload successfull",
+		"video_not_found": "Video not found",
+		"activation_email_sent": "Activation email sent",
+		"email_already_registered": "Email already registered",
+		"edit_successfull": "Edit successfull"
+	}
+}

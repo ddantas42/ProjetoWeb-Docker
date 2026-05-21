@@ -1,0 +1,98 @@
+{
+	"language": "pt",
+	"error":
+	{
+		"invalid_link": "Link inválido",
+		"video_not_found": "Vídeo não encontrado"
+	},
+	
+	"home":
+	{
+		"upload_video": "Carregar vídeo",
+		"logout": "Terminar sessão",
+		"map": "Mapa",
+		"my_videos": "Os meus vídeos",
+		"video_not_supported": "O teu navegador não suporta a etiqueta de vídeo."
+	},
+
+	"login":
+	{
+		"login_title": "Iniciar sessão no Map Share",
+		"email": "Correio eletrónico",
+		"password": "Palavra-passe",
+		"login": "Iniciar sessão",
+		"register": "Registar",
+		"no_account": "Não tens conta?"
+	},
+
+	"register":
+	{
+		"create_account": "Criar conta",
+		"register_title": "Registar no Map Share",
+		"email": "Correio eletrónico",
+		"username": "Nome de utilizador",
+		"password": "Palavra-passe",
+		"confirm_password": "Confirmar palavra-passe",
+		"register": "Registar",
+		"already_have_account": "Já tens conta?",
+		"login": "Iniciar sessão"
+	},
+
+	"map":
+	{
+		"return_home": "Voltar ao início",
+		"update_map": "Atualizar mapa",
+		"search_placeholder": "Procurar uma localização",
+		"search_map": "Procurar no mapa"
+	},
+
+	"upload":
+	{
+		"upload_title": "Carregar conteúdo para o Map Share",
+		"return_home": "Voltar à página inicial",
+		"upload_content": "Carregar conteúdo",
+		"select_file": "Selecionar ficheiro",
+		"upload": "Carregar",
+		"title": "Título",
+		"description": "Descrição",
+		"latitude": "Latitude",
+		"longitude": "Longitude",
+		"put_my_coords": "Colocar as minhas coordenadas"
+	},
+	
+	"edit":
+	{
+		"edit_title": "Editar vídeo",
+		"return_home": "Voltar à página inicial",
+		"update_video": "Atualizar vídeo",
+		"title": "Título",
+		"description": "Descrição"
+	},
+	
+	"watch":
+	{
+		"title": "Título",
+		"description": "Descrição",
+		"location": "Localização",
+		"latitude": "Latitude",
+		"longitude": "Longitude",
+		"browser_not_support_video": "O teu navegador não suporta a etiqueta de vídeo.",
+		"browser_not_support_audio": "O teu navegador não suporta a etiqueta de áudio."
+	},
+
+	"special": {
+		"invalid_password": "Palavra-passe inválida",
+		"invalid_email": "Correio eletrónico inválido",
+		"not_activated": "Conta não ativada",
+		"no_file": "Nenhum ficheiro selecionado",
+		"invalid_file": "Ficheiro inválido",
+		"fill_all": "Preencha todos os campos",
+		"file_already_exists": "O ficheiro já existe",
+		"upload_successfull": "Carregamento bem-sucedido",
+		"video_not_found": "Vídeo não encontrado",
+		"account_created_successfully": "Conta criada com sucesso",
+		"activation_email_sent": "E-mail de ativação enviado",
+		"email_already_registered": "Correio eletrónico já registado",
+		"edit_successfull": "Edição bem-sucedida"
+	}
+}

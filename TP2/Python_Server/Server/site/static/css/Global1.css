@@ -1,0 +1,71 @@
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    margin-top: 75px;
+    display: flex;
+    flex-direction: column; /*coloca em coluna*/
+    align-items: center;
+    font-family: Arial, sans-serif;
+    background-image: url("../imgs/Image1.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+h1 { /*"Map Share", "Login", "Register" e "Upload"*/
+    text-align: center;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.700);
+}
+
+section h2 { /*"Login", "Create an Account" e "Upload Your Content"*/
+    margin-bottom: 30px;
+    color: rgb(255, 0, 0);
+}
+
+ul { /*"Return to Home Page", "Upload Content", "Map", "Log out" e "Map" */
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+form { /*Caixas Escrever*/
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+form label { /*"Username", "Email", "Password", "Confirm Password", "Tittle", "Latitude" e "Longitude"*/
+    text-align: left;
+    font-weight: bold;
+    color: black;
+}
+
+button:hover { /*Animações "Login", "Register" e "Upload"*/
+    background-color: rgba(255, 255, 255, 0.8);
+    color: black;
+    border: 1px solid black;
+}
+
+button[type="submit"] { /*"Login", "Register" e "Upload"*/
+    margin-top: 10px;
+}
+
+.error {
+	background-color: mistyrose;
+    font-weight: bold;
+    margin-top: 10px;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.info {
+	background-color: lightgreen;
+    font-weight: bold;
+    margin-top: 10px;
+    border-radius: 5px;
+    padding: 10px;
+}

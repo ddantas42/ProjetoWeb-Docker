@@ -1,0 +1,8 @@
+# Local environment file
+.env
+
+# Keep template tracked
+!.env.example
+
+# MariaDB local volume data
+DB/

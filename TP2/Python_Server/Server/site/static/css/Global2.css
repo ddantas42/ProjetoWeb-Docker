@@ -1,0 +1,39 @@
+section { /*Caixa Translúcida*/
+    text-align: center;
+    background: rgba(255, 255, 255, 0.575);
+    padding: 15px 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.589);
+    width: 100%;
+    max-width: 400px;
+    margin-top: 10px;
+}
+
+form input { /*Caixas Escrever*/
+    padding: 10px;
+    font-size: medium;
+    border: 1px solid rgba(0, 0, 0, 0.479);
+    border-radius: 5px;
+    transition: border-color 0.7s ease, transform 0.3s ease;
+}
+
+form input:focus { /*Clicar nas Caixas Escrever*/
+    border-color: rgb(255, 0, 0);
+    outline: none;
+    transform: scale(1.02);
+}
+
+p { /*Texto ao lado de "Login" e "Register"*/
+    font-weight: bold;
+}
+
+button { /*"Login" e "Register"*/
+    padding: 10px 20px;
+    font-size: medium;
+    color: rgb(255, 0, 0);
+    background-color: rgba(255, 255, 255, 0);
+    border: 1px solid rgba(0, 0, 0, 0.479);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.7s ease, color 1s ease;
+}

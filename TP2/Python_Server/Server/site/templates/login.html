@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="{{ lang.language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Share</title>
+    <link rel="stylesheet" href="../static/css/Global1.css">
+    <link rel="stylesheet" href="../static/css/Global2.css">
+</head>
+<body>
+    <header>
+        <h1>{{ lang.login.login_title }}</h1>
+    </header>
+
+    <section>
+        <h2>{{ lang.login.login }}</h2>
+        <form action="/login" method="POST">
+            <label for="email">{{ lang.login.email }}:</label>
+            <input type="email" id="email" name="email" required>
+            
+            <label for="password">{{ lang.login.password }}:</label>
+            <input type="password" id="password" name="password" required>
+            
+            <button type="submit">{{ lang.login.login }}</button>
+        </form>
+
+        <p>{{ lang.login.no_account }}
+            <button onclick="window.location='/register'">{{ lang.login.register }}</button>
+        </p>
+
+		{% if lang.error_message %}
+		<p class="error">{{ lang.error_message }}</p>
+		{% endif %}
+		
+		{% if lang.info_message %}
+		<p class="info">{{ lang.info_message }}</p>
+		{% endif %}
+
+    </section>
+
+</body>
+</html>
