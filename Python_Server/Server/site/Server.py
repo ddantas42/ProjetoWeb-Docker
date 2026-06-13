@@ -43,11 +43,12 @@ app = Flask(__name__)
 app.url_map.strict_slashes = False
 
 IOT_REST_BASE_URL = os.getenv('IOT_REST_BASE_URL', 'https://cjsg.ddns.net:8443').rstrip('/')
+IOT_REST_VERIFY_SSL = os.getenv('IOT_REST_VERIFY_SSL', 'false').lower() in ['1', 'true', 'yes']
 IOT_MQTT_HOST = os.getenv('IOT_MQTT_HOST', 'cjsg.ddns.net')
 IOT_MQTT_PORT = int(os.getenv('IOT_MQTT_PORT', '1883'))
 IOT_MQTT_USER = os.getenv('IOT_MQTT_USER')
 IOT_MQTT_PASSWORD = os.getenv('IOT_MQTT_PASSWORD')
-IOT_MQTT_TOPICS = ['/weather', '/power', '/stream1']
+IOT_MQTT_TOPICS = ['/weather']
 IOT_MQTT_STATE = {
 	"connected": False,
 	"last_error": None,
@@ -85,7 +86,7 @@ logging.basicConfig( level=logging.DEBUG )
 # ===== HELPER FUNCTIONS =====
 def _safe_json_response(url):
 	try:
-		response = requests.get(url, timeout=5)
+		response = requests.get(url, timeout=5, verify=IOT_REST_VERIFY_SSL)
 		response.raise_for_status()
 		return response.json()
 	except Exception as e:
@@ -101,6 +102,11 @@ def _start_iot_mqtt_client():
 	if mqtt is None:
 		with IOT_MQTT_LOCK:
 			IOT_MQTT_STATE["last_error"] = "paho-mqtt is not installed"
+		return
+
+	if not IOT_MQTT_USER or not IOT_MQTT_PASSWORD:
+		with IOT_MQTT_LOCK:
+			IOT_MQTT_STATE["last_error"] = "MQTT credentials not configured"
 		return
 
 	def on_connect(client, userdata, flags, reason_code, properties=None):
@@ -532,19 +538,14 @@ def get_iot_rest_state():
 
 	weather_values = _safe_json_response(f"{IOT_REST_BASE_URL}/weather/values")
 	weather_position = _safe_json_response(f"{IOT_REST_BASE_URL}/weather/position")
-	socket_values = _safe_json_response(f"{IOT_REST_BASE_URL}/socket/values")
-	socket_position = _safe_json_response(f"{IOT_REST_BASE_URL}/socket/position")
 
 	return jsonify({
 		"source": "REST",
 		"baseUrl": IOT_REST_BASE_URL,
+		"verifySsl": IOT_REST_VERIFY_SSL,
 		"weather": {
 			"values": weather_values,
 			"position": weather_position
-		},
-		"socket": {
-			"values": socket_values,
-			"position": socket_position
 		}
 	})
 

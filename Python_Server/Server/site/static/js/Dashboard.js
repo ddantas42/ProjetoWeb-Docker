@@ -39,16 +39,16 @@ async function loadRestState() {
 		}
 		const data = await response.json();
 		const weather = data.weather?.values || {};
-		const socket = data.socket?.values || {};
+		const position = data.weather?.position || {};
 
-		if (weather.error || socket.error) {
-			throw new Error(weather.error || socket.error);
+		if (weather.error || position.error) {
+			throw new Error(weather.error || position.error);
 		}
 
 		document.getElementById("rest-temperature").textContent = formatValue(pick(weather, ["temperature", "temp"]), " C");
 		document.getElementById("rest-humidity").textContent = formatValue(pick(weather, ["humidity"]), "%");
-		document.getElementById("rest-power").textContent = formatValue(pick(socket, ["power"]), " W");
-		document.getElementById("rest-energy").textContent = formatValue(pick(socket, ["energy"]), " kWh");
+		document.getElementById("rest-time").textContent = formatValue(pick(weather, ["time"]));
+		document.getElementById("rest-position").textContent = `${formatValue(position.latitude)}, ${formatValue(position.longitude)}`;
 		setStatus("rest", true, "REST connected");
 		updateLastRefresh();
 	} catch (error) {
@@ -82,13 +82,12 @@ async function loadMqttState() {
 		}
 		const data = await response.json();
 		const weather = data.topics?.["/weather"]?.value || {};
-		const power = data.topics?.["/power"]?.value || {};
 		const temperature = Number(pick(weather, ["temperature", "temp"]));
 
 		document.getElementById("mqtt-broker").textContent = `Broker: ${data.broker?.host}:${data.broker?.port}`;
 		document.getElementById("mqtt-temperature").textContent = formatValue(pick(weather, ["temperature", "temp"]), " C");
 		document.getElementById("mqtt-humidity").textContent = formatValue(pick(weather, ["humidity"]), "%");
-		document.getElementById("mqtt-power").textContent = formatValue(pick(power, ["power"]), " W");
+		document.getElementById("mqtt-time").textContent = formatValue(pick(weather, ["time"]));
 		document.getElementById("mqtt-updated").textContent = data.last_update || "--";
 		document.getElementById("mqtt-raw").textContent = JSON.stringify(data, null, 2);
 
@@ -106,23 +105,7 @@ async function loadMqttState() {
 	}
 }
 
-async function sendSocketAction(action) {
-	const target = document.getElementById("socket-action-result");
-	target.textContent = `Sending ${action.toUpperCase()}...`;
-	try {
-		const response = await fetch(`/api/iot/socket/${action}`, { method: "POST" });
-		const data = await response.json();
-		target.textContent = data.success ? `Socket ${action.toUpperCase()} command sent` : `Command failed: ${data.error || "unknown error"}`;
-		await loadRestState();
-	} catch (error) {
-		target.textContent = `Command failed: ${error.message}`;
-	}
-}
-
 document.getElementById("refresh-rest").addEventListener("click", loadRestState);
-document.querySelectorAll("[data-socket-action]").forEach((button) => {
-	button.addEventListener("click", () => sendSocketAction(button.dataset.socketAction));
-});
 
 loadRestState();
 loadMqttState();

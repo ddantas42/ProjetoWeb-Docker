@@ -36,7 +36,7 @@
 			<div class="panel-heading">
 				<div>
 					<p class="eyebrow">REST API</p>
-					<h2>Weather and Socket</h2>
+					<h2>Weather Sensor</h2>
 				</div>
 				<button type="button" id="refresh-rest">Refresh</button>
 			</div>
@@ -53,21 +53,15 @@
 					<span class="metric-unit">Weather / REST</span>
 				</article>
 				<article class="metric">
-					<span class="metric-label">Power</span>
-					<strong id="rest-power">--</strong>
-					<span class="metric-unit">Socket / REST</span>
+					<span class="metric-label">Sensor Time</span>
+					<strong id="rest-time">--</strong>
+					<span class="metric-unit">Weather / REST</span>
 				</article>
 				<article class="metric">
-					<span class="metric-label">Energy</span>
-					<strong id="rest-energy">--</strong>
-					<span class="metric-unit">Socket / REST</span>
+					<span class="metric-label">Position</span>
+					<strong id="rest-position">--</strong>
+					<span class="metric-unit">Weather / REST</span>
 				</article>
-			</div>
-
-			<div class="controls">
-				<button type="button" data-socket-action="on">Socket ON</button>
-				<button type="button" data-socket-action="off">Socket OFF</button>
-				<span id="socket-action-result">No command sent</span>
 			</div>
 		</section>
 
@@ -92,9 +86,9 @@
 					<span class="metric-unit">Topic /weather</span>
 				</article>
 				<article class="metric">
-					<span class="metric-label">MQTT Power</span>
-					<strong id="mqtt-power">--</strong>
-					<span class="metric-unit">Topic /power</span>
+					<span class="metric-label">MQTT Time</span>
+					<strong id="mqtt-time">--</strong>
+					<span class="metric-unit">Topic /weather</span>
 				</article>
 				<article class="metric">
 					<span class="metric-label">MQTT Updated</span>

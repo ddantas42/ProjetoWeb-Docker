@@ -39,6 +39,7 @@ services:
       FLASK_ENV: production
       SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
       IOT_REST_BASE_URL: ${IOT_REST_BASE_URL:-https://cjsg.ddns.net:8443}
+      IOT_REST_VERIFY_SSL: ${IOT_REST_VERIFY_SSL:-false}
       IOT_MQTT_HOST: ${IOT_MQTT_HOST:-cjsg.ddns.net}
       IOT_MQTT_PORT: ${IOT_MQTT_PORT:-1883}
       IOT_MQTT_USER: ${IOT_MQTT_USER:-}
