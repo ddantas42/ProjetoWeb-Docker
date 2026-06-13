@@ -1,5 +1,31 @@
 services:
-  # Servidor Web - único ponto de acesso (porta 80 exposta)
+  # Reverse proxy - unico ponto de acesso publico
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: projectweb-nginx
+    depends_on:
+      web-server:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    volumes:
+      - ./Nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/login"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Servidor Web - interface Flask interna
   web-server:
     build: Python_Server/
     container_name: projectweb-web
@@ -12,12 +38,17 @@ services:
       DATA_SOCKET_PORT: 9000
       FLASK_ENV: production
       SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
-    ports:
-      - "80:80"
+      IOT_REST_BASE_URL: ${IOT_REST_BASE_URL:-https://cjsg.ddns.net:8443}
+      IOT_MQTT_HOST: ${IOT_MQTT_HOST:-cjsg.ddns.net}
+      IOT_MQTT_PORT: ${IOT_MQTT_PORT:-1883}
+      IOT_MQTT_USER: ${IOT_MQTT_USER:-}
+      IOT_MQTT_PASSWORD: ${IOT_MQTT_PASSWORD:-}
+    expose:
+      - "80"
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/login"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:80/login').raise_for_status()"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -29,7 +60,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # API Server - Flask REST API e Sockets TCP (portas 5000 e 9000 internas)
+  # API Server - Flask REST API e Sockets TCP internos
   api-server:
     build: Data_Server/
     container_name: projectweb-api

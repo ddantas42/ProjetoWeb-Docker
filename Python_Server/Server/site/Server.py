@@ -8,10 +8,18 @@ from python.lang import loadLang, loadSpecialLang
 from python.data_server_api import DataServerAPI
 
 import hashlib
+import json
 import logging
 import re
 import os
 import requests
+import threading
+import time
+
+try:
+	import paho.mqtt.client as mqtt
+except ImportError:
+	mqtt = None
 
 # Regular expressions
 emailRegEx = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
@@ -33,6 +41,21 @@ r"""
 db_api = DataServerAPI()
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+
+IOT_REST_BASE_URL = os.getenv('IOT_REST_BASE_URL', 'https://cjsg.ddns.net:8443').rstrip('/')
+IOT_MQTT_HOST = os.getenv('IOT_MQTT_HOST', 'cjsg.ddns.net')
+IOT_MQTT_PORT = int(os.getenv('IOT_MQTT_PORT', '1883'))
+IOT_MQTT_USER = os.getenv('IOT_MQTT_USER')
+IOT_MQTT_PASSWORD = os.getenv('IOT_MQTT_PASSWORD')
+IOT_MQTT_TOPICS = ['/weather', '/power', '/stream1']
+IOT_MQTT_STATE = {
+	"connected": False,
+	"last_error": None,
+	"last_update": None,
+	"topics": {}
+}
+IOT_MQTT_LOCK = threading.Lock()
+IOT_MQTT_STARTED = False
 
 app.config[ 'TEMPLATES_AUTO_RELOAD' ] = True
 
@@ -60,6 +83,72 @@ mail = Mail(app)
 logging.basicConfig( level=logging.DEBUG )
 
 # ===== HELPER FUNCTIONS =====
+def _safe_json_response(url):
+	try:
+		response = requests.get(url, timeout=5)
+		response.raise_for_status()
+		return response.json()
+	except Exception as e:
+		logging.error(f"IoT REST request failed for {url}: {e}")
+		return {"error": str(e)}
+
+def _start_iot_mqtt_client():
+	global IOT_MQTT_STARTED
+	if IOT_MQTT_STARTED:
+		return
+	IOT_MQTT_STARTED = True
+
+	if mqtt is None:
+		with IOT_MQTT_LOCK:
+			IOT_MQTT_STATE["last_error"] = "paho-mqtt is not installed"
+		return
+
+	def on_connect(client, userdata, flags, reason_code, properties=None):
+		with IOT_MQTT_LOCK:
+			IOT_MQTT_STATE["connected"] = reason_code == 0
+			IOT_MQTT_STATE["last_error"] = None if reason_code == 0 else f"MQTT connect failed: {reason_code}"
+		if reason_code == 0:
+			for topic in IOT_MQTT_TOPICS:
+				client.subscribe(topic, qos=0)
+
+	def on_disconnect(client, userdata, reason_code, properties=None):
+		with IOT_MQTT_LOCK:
+			IOT_MQTT_STATE["connected"] = False
+			IOT_MQTT_STATE["last_error"] = f"MQTT disconnected: {reason_code}"
+
+	def on_message(client, userdata, message):
+		payload = message.payload.decode('utf-8', errors='replace')
+		try:
+			value = json.loads(payload)
+		except Exception:
+			value = payload
+
+		with IOT_MQTT_LOCK:
+			IOT_MQTT_STATE["topics"][message.topic] = {
+				"value": value,
+				"received_at": time.strftime('%Y-%m-%d %H:%M:%S')
+			}
+			IOT_MQTT_STATE["last_update"] = time.strftime('%Y-%m-%d %H:%M:%S')
+			IOT_MQTT_STATE["last_error"] = None
+
+	def run_client():
+		try:
+			client = mqtt.Client()
+			if IOT_MQTT_USER and IOT_MQTT_PASSWORD:
+				client.username_pw_set(IOT_MQTT_USER, IOT_MQTT_PASSWORD)
+			client.on_connect = on_connect
+			client.on_disconnect = on_disconnect
+			client.on_message = on_message
+			client.connect(IOT_MQTT_HOST, IOT_MQTT_PORT, keepalive=60)
+			client.loop_forever()
+		except Exception as e:
+			logging.error(f"IoT MQTT client failed: {e}")
+			with IOT_MQTT_LOCK:
+				IOT_MQTT_STATE["connected"] = False
+				IOT_MQTT_STATE["last_error"] = str(e)
+
+	threading.Thread(target=run_client, daemon=True).start()
+
 def get_user_lang(email):
 	"""Obtém a língua do utilizador"""
 	response = db_api.get_user(email)
@@ -272,6 +361,14 @@ def getMap():
 	lang = loadLang(get_user_lang(session.get('email')))
 	return render_template('map.html', lang=lang)
 
+@app.route('/dashboard', methods=['GET'])
+def dashboard():
+	logging.debug("Route /dashboard called...")
+	if (session.get('email') == None):	return redirect('/login')
+	_start_iot_mqtt_client()
+	lang = loadLang(get_user_lang(session.get('email')))
+	return render_template('dashboard.html', lang=lang)
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
 	logging.debug(f"Route /upload called...")
@@ -428,6 +525,50 @@ def getVideos():
 		return jsonify([]), response.status_code
 
 	return jsonify(response.json().get('videos', []))
+
+@app.route('/api/iot/rest/state', methods=['GET'])
+def get_iot_rest_state():
+	if (session.get('email') == None): return jsonify({}), 401
+
+	weather_values = _safe_json_response(f"{IOT_REST_BASE_URL}/weather/values")
+	weather_position = _safe_json_response(f"{IOT_REST_BASE_URL}/weather/position")
+	socket_values = _safe_json_response(f"{IOT_REST_BASE_URL}/socket/values")
+	socket_position = _safe_json_response(f"{IOT_REST_BASE_URL}/socket/position")
+
+	return jsonify({
+		"source": "REST",
+		"baseUrl": IOT_REST_BASE_URL,
+		"weather": {
+			"values": weather_values,
+			"position": weather_position
+		},
+		"socket": {
+			"values": socket_values,
+			"position": socket_position
+		}
+	})
+
+@app.route('/api/iot/socket/<action>', methods=['POST'])
+def control_iot_socket(action):
+	if (session.get('email') == None): return jsonify({}), 401
+	if action not in ["on", "off"]:
+		return jsonify({"success": False, "error": "Invalid socket action"}), 400
+
+	result = _safe_json_response(f"{IOT_REST_BASE_URL}/socket/{action}")
+	return jsonify({"success": "error" not in result, "action": action, "result": result})
+
+@app.route('/api/iot/mqtt/latest', methods=['GET'])
+def get_iot_mqtt_latest():
+	if (session.get('email') == None): return jsonify({}), 401
+	_start_iot_mqtt_client()
+	with IOT_MQTT_LOCK:
+		state = json.loads(json.dumps(IOT_MQTT_STATE))
+	state["broker"] = {
+		"host": IOT_MQTT_HOST,
+		"port": IOT_MQTT_PORT,
+		"topics": IOT_MQTT_TOPICS
+	}
+	return jsonify(state)
 
 @app.route('/watch/api/getVideo/<int:video_id>', methods=['GET'])
 def getVideo(video_id):

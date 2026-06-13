@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/bin/bash
 set -e
 
 PYTHON_BIN=python3
@@ -9,4 +9,4 @@ echo "ReCreating Python environment..."
 ${PYTHON_BIN} -m venv ${Directory_PythonEnv}
 
 echo "Activating the Python environment..."
-${Directory_PythonEnv}/bin/pip install Flask Flask-Session Flask-Mail requests
+${Directory_PythonEnv}/bin/pip install -r requirements.txt
