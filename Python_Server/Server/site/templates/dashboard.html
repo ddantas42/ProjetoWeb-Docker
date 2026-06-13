@@ -32,6 +32,7 @@
 			<div id="last-refresh">Last refresh: --</div>
 		</section>
 
+		<!-- REST section: values are fetched through Flask to avoid browser CORS restrictions. -->
 		<section class="panel">
 			<div class="panel-heading">
 				<div>
@@ -65,6 +66,7 @@
 			</div>
 		</section>
 
+		<!-- MQTT section: shows cached messages received by the Flask background subscriber. -->
 		<section class="panel">
 			<div class="panel-heading">
 				<div>
@@ -106,6 +108,7 @@
 			</div>
 		</section>
 
+		<!-- Raw state is useful during evaluation because it exposes broker errors and payloads. -->
 		<section class="panel table-panel">
 			<div class="panel-heading">
 				<div>

@@ -1,5 +1,6 @@
 const tempHistory = [];
 
+// Update the small status indicators at the top of the dashboard.
 function setStatus(kind, ok, text) {
 	const label = document.getElementById(`${kind}-status`);
 	const dot = document.getElementById(`${kind}-status-dot`);
@@ -27,12 +28,14 @@ function pick(source, keys) {
 	return undefined;
 }
 
+// REST values are refreshed every 10 seconds, as requested in the IoT challenge.
 function updateLastRefresh() {
 	document.getElementById("last-refresh").textContent = `Last refresh: ${new Date().toLocaleTimeString()}`;
 }
 
 async function loadRestState() {
 	try {
+		// The browser only calls our Flask app. Flask calls the external IoT API.
 		const response = await fetch("/api/iot/rest/state");
 		if (!response.ok) {
 			throw new Error(`HTTP ${response.status}`);
@@ -56,6 +59,7 @@ async function loadRestState() {
 	}
 }
 
+// Lightweight local chart used while Grafana/InfluxDB are not part of this project.
 function renderChart() {
 	const chart = document.getElementById("temperature-chart");
 	chart.innerHTML = "";
@@ -76,6 +80,7 @@ function renderChart() {
 
 async function loadMqttState() {
 	try {
+		// This returns the latest message cached by the Flask MQTT background thread.
 		const response = await fetch("/api/iot/mqtt/latest");
 		if (!response.ok) {
 			throw new Error(`HTTP ${response.status}`);
@@ -91,6 +96,7 @@ async function loadMqttState() {
 		document.getElementById("mqtt-updated").textContent = data.last_update || "--";
 		document.getElementById("mqtt-raw").textContent = JSON.stringify(data, null, 2);
 
+		// Only add new numeric temperature values to the small history chart.
 		if (!Number.isNaN(temperature)) {
 			const last = tempHistory[tempHistory.length - 1];
 			if (last !== temperature) {
@@ -107,6 +113,8 @@ async function loadMqttState() {
 
 document.getElementById("refresh-rest").addEventListener("click", loadRestState);
 
+// Initial load plus polling: REST follows the 10 second requirement; MQTT is read
+// more often because the backend cache is cheap to query.
 loadRestState();
 loadMqttState();
 setInterval(loadRestState, 10000);

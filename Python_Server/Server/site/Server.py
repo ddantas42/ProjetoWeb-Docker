@@ -42,6 +42,8 @@ db_api = DataServerAPI()
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 
+# IoT configuration. Values come from docker-compose/.env so the UC endpoints can
+# be changed without touching code.
 IOT_REST_BASE_URL = os.getenv('IOT_REST_BASE_URL', 'https://cjsg.ddns.net:8443').rstrip('/')
 IOT_REST_VERIFY_SSL = os.getenv('IOT_REST_VERIFY_SSL', 'false').lower() in ['1', 'true', 'yes']
 IOT_MQTT_HOST = os.getenv('IOT_MQTT_HOST', 'cjsg.ddns.net')
@@ -49,6 +51,8 @@ IOT_MQTT_PORT = int(os.getenv('IOT_MQTT_PORT', '1883'))
 IOT_MQTT_USER = os.getenv('IOT_MQTT_USER')
 IOT_MQTT_PASSWORD = os.getenv('IOT_MQTT_PASSWORD')
 IOT_MQTT_TOPICS = ['/weather']
+
+# Shared cache for the latest MQTT values received by the background client.
 IOT_MQTT_STATE = {
 	"connected": False,
 	"last_error": None,
@@ -85,6 +89,7 @@ logging.basicConfig( level=logging.DEBUG )
 
 # ===== HELPER FUNCTIONS =====
 def _safe_json_response(url):
+	"""Server-side REST proxy helper used to avoid browser CORS issues."""
 	try:
 		response = requests.get(url, timeout=5, verify=IOT_REST_VERIFY_SSL)
 		response.raise_for_status()
@@ -94,6 +99,7 @@ def _safe_json_response(url):
 		return {"error": str(e)}
 
 def _start_iot_mqtt_client():
+	"""Start one background MQTT subscriber and keep the latest values in memory."""
 	global IOT_MQTT_STARTED
 	if IOT_MQTT_STARTED:
 		return
@@ -105,6 +111,7 @@ def _start_iot_mqtt_client():
 		return
 
 	if not IOT_MQTT_USER or not IOT_MQTT_PASSWORD:
+		# The UC broker rejects anonymous clients, so do not keep retrying without credentials.
 		with IOT_MQTT_LOCK:
 			IOT_MQTT_STATE["last_error"] = "MQTT credentials not configured"
 		return
@@ -125,6 +132,7 @@ def _start_iot_mqtt_client():
 	def on_message(client, userdata, message):
 		payload = message.payload.decode('utf-8', errors='replace')
 		try:
+			# Sensor messages are expected as JSON, but raw strings are still shown in diagnostics.
 			value = json.loads(payload)
 		except Exception:
 			value = payload
@@ -153,6 +161,7 @@ def _start_iot_mqtt_client():
 				IOT_MQTT_STATE["connected"] = False
 				IOT_MQTT_STATE["last_error"] = str(e)
 
+	# The Flask request must return immediately; MQTT listening runs in the background.
 	threading.Thread(target=run_client, daemon=True).start()
 
 def get_user_lang(email):
@@ -536,6 +545,7 @@ def getVideos():
 def get_iot_rest_state():
 	if (session.get('email') == None): return jsonify({}), 401
 
+	# The dashboard calls this local endpoint; Flask calls the external IoT REST API.
 	weather_values = _safe_json_response(f"{IOT_REST_BASE_URL}/weather/values")
 	weather_position = _safe_json_response(f"{IOT_REST_BASE_URL}/weather/position")
 
@@ -549,19 +559,12 @@ def get_iot_rest_state():
 		}
 	})
 
-@app.route('/api/iot/socket/<action>', methods=['POST'])
-def control_iot_socket(action):
-	if (session.get('email') == None): return jsonify({}), 401
-	if action not in ["on", "off"]:
-		return jsonify({"success": False, "error": "Invalid socket action"}), 400
-
-	result = _safe_json_response(f"{IOT_REST_BASE_URL}/socket/{action}")
-	return jsonify({"success": "error" not in result, "action": action, "result": result})
-
 @app.route('/api/iot/mqtt/latest', methods=['GET'])
 def get_iot_mqtt_latest():
 	if (session.get('email') == None): return jsonify({}), 401
 	_start_iot_mqtt_client()
+
+	# Return a copy so JSON serialization does not race with the MQTT thread.
 	with IOT_MQTT_LOCK:
 		state = json.loads(json.dumps(IOT_MQTT_STATE))
 	state["broker"] = {
