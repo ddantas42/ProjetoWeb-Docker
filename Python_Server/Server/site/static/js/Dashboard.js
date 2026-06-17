@@ -86,7 +86,9 @@ async function loadMqttState() {
 			throw new Error(`HTTP ${response.status}`);
 		}
 		const data = await response.json();
+		console.log(data);
 		const weather = data.topics?.["/weather"]?.value || {};
+
 		const temperature = Number(pick(weather, ["temperature", "temp"]));
 
 		document.getElementById("mqtt-broker").textContent = `Broker: ${data.broker?.host}:${data.broker?.port}`;
@@ -94,7 +96,9 @@ async function loadMqttState() {
 		document.getElementById("mqtt-humidity").textContent = formatValue(pick(weather, ["humidity"]), "%");
 		document.getElementById("mqtt-time").textContent = formatValue(pick(weather, ["time"]));
 		document.getElementById("mqtt-updated").textContent = data.last_update || "--";
+
 		document.getElementById("mqtt-raw").textContent = JSON.stringify(data, null, 2);
+		
 
 		// Only add new numeric temperature values to the small history chart.
 		if (!Number.isNaN(temperature)) {
