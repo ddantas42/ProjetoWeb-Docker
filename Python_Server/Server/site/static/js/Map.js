@@ -120,7 +120,7 @@ async function AddSensorMarkers(boundsPoints)
 		title.textContent = 'Weather Sensor'
 		popup.appendChild(title)
 		popup.appendChild(createPopupRow('Coordinates', coordinates))
-		popup.appendChild(createPopupRow('Temperature', formatValue(pick(values, ['temperature', 'temp']), ' C')))
+		popup.appendChild(createPopupRow('Temperature', formatValue(pick(values, ['temperature', 'temp']), ' C'))) // mudar aqui ou adicionar novos parametros json
 		popup.appendChild(createPopupRow('Humidity', formatValue(pick(values, ['humidity']), '%')))
 
 		const marker = L.marker([latitude, longitude], { icon: sensorIcon }).addTo(sensorMarkers)

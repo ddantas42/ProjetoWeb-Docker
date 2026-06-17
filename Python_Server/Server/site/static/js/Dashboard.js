@@ -85,15 +85,37 @@ async function loadMqttState() {
 		if (!response.ok) {
 			throw new Error(`HTTP ${response.status}`);
 		}
-		const data = await response.json();
-		console.log(data);
-		const weather = data.topics?.["/weather"]?.value || {};
 
-		const temperature = Number(pick(weather, ["temperature", "temp"]));
+		/*
+		JSON mais aninhado, Hoje esperas dados diretos:
+		{
+			"temperature": 22
+		}
+		Mas pode vir assim:
+		{
+			"sensor": {
+				"temperature": 22
+		}
+		}
+		ou:
+		{
+			"data": {
+				"values": {
+					"temperature": 22
+				}
+			}
+		}
+		*/ 
+		// alterar para o sitio certo
+		// const weather = data.weather?.values?.sensor || data.weather?.values || {};
+		const data = await response.json();
+		const weather = data.topics?.["/weather"]?.value || {}; // Change this if you change the topic in Server.py
+		const temperature = Number(pick(weather, ["temperature", "temp"])); // se mudar os nomes dos campos no JSON, adicionar/alterar aqui pick(weather, ["temperature", "temp", "", "..."])
+		// e mudar no map.js tbm
 
 		document.getElementById("mqtt-broker").textContent = `Broker: ${data.broker?.host}:${data.broker?.port}`;
 		document.getElementById("mqtt-temperature").textContent = formatValue(pick(weather, ["temperature", "temp"]), " C");
-		document.getElementById("mqtt-humidity").textContent = formatValue(pick(weather, ["humidity"]), "%");
+		document.getElementById("mqtt-humidity").textContent = formatValue(pick(weather, ["humidity"]), "%"); // pode mudar a unidade, tipo  em vez de 65% mudar para o.65
 		document.getElementById("mqtt-time").textContent = formatValue(pick(weather, ["time"]));
 		document.getElementById("mqtt-updated").textContent = data.last_update || "--";
 

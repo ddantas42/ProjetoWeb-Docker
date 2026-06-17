@@ -3,6 +3,18 @@ import json
 import os
 import logging
 
+"""
+O data_server_api.py funciona como uma camada intermédia entre o Flask e o Data_Server. 
+Em vez de o Server.py abrir sockets manualmente sempre que quer criar um utilizador ou obter vídeos,
+chama métodos como create_user, get_user, get_all_videos ou create_video. 
+Esses métodos convertem a operação numa ação JSON enviada para o Data_Server.
+"""
+
+# a classe dummyresponse imita parcialmente uma resposta HTTP, porque tem status_code e o método 
+# .json(). Assim, o resto do código pode tratar da resposta do data_server
+# de forma parecida a uma resposta da biblioteca requests, mesmo que por baixo a 
+# comunicação esteja a ser feita por sockets TCP 
+
 class DummyResponse:
     def __init__(self, data, status_code):
         self._data = data
@@ -21,6 +33,12 @@ class DataServerAPI:
             'action': action,
             'payload': payload or {}
         }
+        # cria um socket TCP
+        # liga ao host data-server
+        # usa a porta 9000 
+        # envia um JSON com action e payload
+        # espera uma resposta JSON
+        # transforma a resposta num DummyResponse
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((self.host, self.port))
