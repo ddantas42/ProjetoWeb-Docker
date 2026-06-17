@@ -50,7 +50,7 @@ IOT_MQTT_HOST = os.getenv('IOT_MQTT_HOST', 'cjsg.ddns.net')
 IOT_MQTT_PORT = int(os.getenv('IOT_MQTT_PORT', '1883'))
 IOT_MQTT_USER = os.getenv('IOT_MQTT_USER')
 IOT_MQTT_PASSWORD = os.getenv('IOT_MQTT_PASSWORD')
-IOT_MQTT_TOPICS = ['/weather']
+IOT_MQTT_TOPICS = ['/weather'] # pode mudar o topico aqui e no dashboard.js
 
 # Shared cache for the latest MQTT values received by the background client.
 IOT_MQTT_STATE = {
@@ -541,6 +541,11 @@ def getVideos():
 
 	return jsonify(response.json().get('videos', []))
 
+
+
+# se mudar caminho rest
+# usamos /weather/values e /weather/position
+
 @app.route('/api/iot/rest/state', methods=['GET'])
 def get_iot_rest_state():
 	if (session.get('email') == None): return jsonify({}), 401
@@ -558,6 +563,8 @@ def get_iot_rest_state():
 			"position": weather_position
 		}
 	})
+
+
 
 @app.route('/api/iot/mqtt/latest', methods=['GET'])
 def get_iot_mqtt_latest():
