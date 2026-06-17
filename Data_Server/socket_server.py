@@ -3,6 +3,23 @@ import threading
 import json
 import logging
 
+"""
+A porta 5000 é usada pelo Data_Server para disponibilizar uma API REST Flask.
+A porta 9000 é usada pelo Data_Server para receber pedidos por socket TCP vindos do Python_Server.
+
+
+Browser
+   ↓ HTTP
+Nginx
+   ↓ HTTP
+Python_Server / Flask
+   ↓ socket TCP + JSON, porta 9000
+Data_Server
+   ↓ SQLAlchemy / PyMySQL
+DB_Server / MySQL
+
+"""
+
 logger = logging.getLogger(__name__)
 
 def handle_client(conn, addr, process_func):
