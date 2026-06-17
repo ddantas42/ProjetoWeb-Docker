@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IoT Weather</title>
+
+    <style>
+        body
+        {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card
+        {
+            background: #1e293b;
+            padding: 24px;
+            border-radius: 12px;
+            width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .title
+        {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .row
+        {
+            margin: 8px 0;
+        }
+
+        .error
+        {
+            color: #f87171;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+
+        <div class="title">Weather Data</div>
+
+    {% if data is defined and not data.error %}
+        <div class="row">🌡 Temperature: {{ data.temperature }}</div>
+        <div class="row">💧 Humidity: {{ data.humidity }}</div>
+        <div class="row">⏱ Time: {{ data.time }}</div>
+    {% elif data is defined and data.error %}
+        <div class="error">{{ data.error }}</div>
+    {% else %}
+        <div class="error">No data received</div>
+    {% endif %}
+    
+        <div class="title">MQTT</div>
+
+        <h3>Weather</h3>
+        <div>🌡 Temp: {{ mqtt.get('weather', {}).get('temperature', 'N/A') }}</div>
+        <div>💧 Humidity: {{ mqtt.get('weather', {}).get('humidity', 'N/A') }}</div>
+        <div>⏱ Time: {{ mqtt.get('weather', {}).get('time', 'N/A') }}</div>
+
+        <h3>Power</h3>
+        <div>⚡ Voltage: {{ mqtt.get('power', {}).get('voltage', 'N/A') }}</div>
+        <div>🔌 Current: {{ mqtt.get('power', {}).get('current', 'N/A') }}</div>
+        <div>🔥 Power: {{ mqtt.get('power', {}).get('power', 'N/A') }}</div>
+        <div>📊 Energy: {{ mqtt.get('power', {}).get('energy', 'N/A') }}</div>
+
+
+</body>
+</html>
